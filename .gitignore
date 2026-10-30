@@ -1,0 +1,14 @@
+# Dépendances et fichiers générés
+node_modules/
+dist/
+release/
+
+# Base de données locale et journaux
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# Système
+.DS_Store
+Thumbs.db
