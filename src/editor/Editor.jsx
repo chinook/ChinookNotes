@@ -8,6 +8,25 @@ import { executerAction, trouverBloc } from './blocs.js';
 import { menuEditeur } from '../menus.js';
 import { EmojisContext, estImagePerso } from '../emoji/Icone.jsx';
 import { PagesContext } from '../pagesContext.js';
+import Sommaire from './Sommaire.jsx';
+
+// Titres et sous-titres de la page, dans l'ordre : le sommaire s'en sert
+function listerTitres(doc) {
+  const titres = [];
+  doc.descendants((n, pos) => {
+    if (n.type.name === 'heading' && n.textContent.trim()) titres.push({ pos, level: n.attrs.level, texte: n.textContent.trim() });
+  });
+  return titres;
+}
+
+// Le conteneur qui défile autour d'un élément (le volet), pour suivre la section affichée
+function trouverDefilement(el) {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const o = getComputedStyle(p).overflowY;
+    if (o === 'auto' || o === 'scroll') return p;
+  }
+  return null;
+}
 
 function lireImage(fichier) {
   return new Promise((resolve) => {
@@ -17,8 +36,9 @@ function lireImage(fichier) {
   });
 }
 
-export default function Editor({ contenu, onChange, onNavigate, chercher = false }) {
+export default function Editor({ contenu, onChange, onNavigate, chercher = false, sommaire = false }) {
   const [mathEdition, setMathEdition] = useState(null);
+  const [titreActif, setTitreActif] = useState(0);
   const [rechercheOuverte, setRechercheOuverte] = useState(false);
   const editeurRef = useRef(null);
   const champRechercheRef = useRef(null);
@@ -85,6 +105,44 @@ export default function Editor({ contenu, onChange, onNavigate, chercher = false
     editor,
     selector: ({ editor: e }) => (e ? cleRecherche.getState(e.state) : null),
   });
+
+  const titres = useEditorState({
+    editor,
+    selector: ({ editor: e }) => (e ? listerTitres(e.state.doc) : []),
+  });
+
+  // Section affichée : le dernier titre déjà passé en haut du volet (sous la barre collée)
+  useEffect(() => {
+    if (!editor || !sommaire) return undefined;
+    const zone = trouverDefilement(editor.view.dom);
+    if (!zone) return undefined;
+    let image = 0;
+    const calculer = () => {
+      image = 0;
+      const limite = zone.getBoundingClientRect().top + 90;
+      let courant = 0;
+      titres.forEach((t, i) => {
+        try {
+          const el = editor.view.nodeDOM(t.pos);
+          if (el?.getBoundingClientRect && el.getBoundingClientRect().top <= limite) courant = i;
+        } catch { /* le document a changé entre-temps : le prochain calcul corrigera */ }
+      });
+      setTitreActif(courant);
+    };
+    const surDefile = () => { if (!image) image = requestAnimationFrame(calculer); };
+    calculer();
+    zone.addEventListener('scroll', surDefile, { passive: true });
+    window.addEventListener('resize', surDefile);
+    return () => {
+      cancelAnimationFrame(image);
+      zone.removeEventListener('scroll', surDefile);
+      window.removeEventListener('resize', surDefile);
+    };
+  }, [editor, titres, sommaire]);
+
+  function allerAuTitre(pos) {
+    editor.view.nodeDOM(pos)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   // Un lien dont l'icône ou la page a changé se redessine par une transaction sans effet sur le contenu
   useEffect(() => {
@@ -178,6 +236,7 @@ export default function Editor({ contenu, onChange, onNavigate, chercher = false
 
   return (
     <div className="editeur">
+      {sommaire && titres.length >= 2 && <Sommaire titres={titres} actif={titreActif} onAller={allerAuTitre} />}
       {rechercheOuverte && (
         <div className="barre-recherche">
           <input

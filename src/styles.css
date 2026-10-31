@@ -8,6 +8,8 @@
   --bordure: #e9e9e7;
   --accent: #2383e2;
   --police: 'Sora', 'Segoe UI', Helvetica, Arial, sans-serif;
+  --defilement: rgba(0, 0, 0, 0.28);
+  --defilement-survol: rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme='sombre'] {
@@ -19,9 +21,18 @@
   --texte-doux: #9b9a97;
   --bordure: #2f2f2f;
   --accent: #529cca;
+  --defilement: rgba(255, 255, 255, 0.25);
+  --defilement-survol: rgba(255, 255, 255, 0.45);
 }
 
 * { box-sizing: border-box; }
+
+/* Barres de défilement : fines, aux couleurs du thème, visibles seulement quand la souris est sur la zone */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { background: transparent; border: 3px solid transparent; border-radius: 8px; background-clip: padding-box; }
+*:hover::-webkit-scrollbar-thumb { background-color: var(--defilement); }
+*::-webkit-scrollbar-thumb:hover { background-color: var(--defilement-survol); }
 
 html, body, #root { height: 100%; margin: 0; }
 
@@ -136,7 +147,7 @@ body.redimensionnement-v * { cursor: row-resize !important; }
 .vide { display: grid; place-content: center; justify-items: center; height: 100%; gap: 12px; color: var(--texte-doux); }
 .vide button { padding: 8px 14px; background: var(--accent); color: #fff; }
 
-.ariane { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; color: var(--texte-doux); font-size: 13px; }
+.ariane { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; color: var(--texte-doux); font-size: 13px; position: sticky; top: 0; z-index: 10; background: var(--fond); }
 .ariane-action { padding: 3px 10px; color: var(--texte-doux); border: 1px solid var(--bordure); }
 .ariane-action:hover { background: var(--survol); color: var(--texte); }
 .ariane a { cursor: pointer; }
@@ -359,6 +370,40 @@ body.redimensionnement-v * { cursor: row-resize !important; }
   vertical-align: -0.2em;
   background: var(--lien-img) center / contain no-repeat;
 }
+
+/* Sommaire : petites barres au bord droit, une par titre ; la liste des titres s'ouvre au survol */
+.ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4, .ProseMirror h5, .ProseMirror h6 { scroll-margin-top: 72px; }
+.sommaire { position: absolute; right: 22px; top: 50%; transform: translateY(-50%); z-index: 20; display: flex; align-items: center; padding: 8px 6px; max-height: 80%; }
+.sommaire-barres { display: flex; flex-direction: column; align-items: flex-end; }
+.sommaire-barre { display: flex; align-items: center; justify-content: flex-end; width: 30px; padding: 0; border-radius: 0; }
+.sommaire-barre span { display: block; height: 2px; border-radius: 1px; background: var(--texte-doux); opacity: 0.45; }
+.sommaire-barre.niveau-1 span { width: 22px; }
+.sommaire-barre.niveau-2 span { width: 16px; }
+.sommaire-barre.niveau-3 span { width: 11px; }
+.sommaire-barre.niveau-4 span { width: 8px; }
+.sommaire-barre:hover span { opacity: 1; }
+.sommaire-barre.actif span { background: var(--texte); opacity: 1; }
+.sommaire-liste {
+  position: absolute;
+  right: calc(100% - 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 270px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 10px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.3);
+}
+.sommaire-titre { display: block; width: 100%; padding: 3px 8px; border-radius: 6px; text-align: left; font-size: 13px; color: var(--texte-doux); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sommaire-titre.niveau-1 { color: var(--texte); font-weight: 600; }
+.sommaire-titre.niveau-2 { padding-left: 20px; }
+.sommaire-titre.niveau-3 { padding-left: 32px; }
+.sommaire-titre.niveau-4 { padding-left: 44px; }
+.sommaire-titre:hover { background: var(--survol); color: var(--texte); }
+.sommaire-titre.actif { color: var(--accent); }
 
 /* Recherche dans la page (Ctrl + F) */
 .recherche-trouve { background: rgba(255, 212, 0, 0.35); border-radius: 2px; }
