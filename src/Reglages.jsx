@@ -1,5 +1,7 @@
 // Réglages : apparence et outils (ce qui se trouvait en bas de la barre latérale)
-export default function Reglages({ theme, zoom, onTheme, onZoomInitial, onLargeurSidebarInitiale, onImporter, onCorbeille, onModeles, onFermer }) {
+import { POLICES } from './polices.js';
+
+export default function Reglages({ theme, police, onPolice, zoom, onTheme, onZoomInitial, onLargeurSidebarInitiale, onImporter, onCorbeille, onModeles, onFermer }) {
   const ouvrir = (action) => () => { onFermer(); action(); };
 
   return (
@@ -11,6 +13,12 @@ export default function Reglages({ theme, zoom, onTheme, onZoomInitial, onLargeu
         <div className="reglage-ligne">
           <span>Thème</span>
           <button onClick={onTheme}>{theme === 'clair' ? '🌙 Passer au thème sombre' : '☀️ Passer au thème clair'}</button>
+        </div>
+        <div className="reglage-ligne">
+          <span>Police</span>
+          <select value={police} onChange={(e) => onPolice(e.target.value)}>
+            {POLICES.map((p) => <option key={p.id} value={p.id} style={{ fontFamily: p.css }}>{p.nom}</option>)}
+          </select>
         </div>
         <div className="reglage-ligne">
           <span>Zoom de l'application : {Math.round(zoom * 100)} % <span className="aide">(Ctrl + molette)</span></span>

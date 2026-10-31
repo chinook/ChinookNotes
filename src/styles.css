@@ -7,6 +7,7 @@
   --texte-doux: #787774;
   --bordure: #e9e9e7;
   --accent: #2383e2;
+  --police: 'Sora', 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 
 :root[data-theme='sombre'] {
@@ -27,7 +28,7 @@ html, body, #root { height: 100%; margin: 0; }
 body {
   background: var(--fond);
   color: var(--texte);
-  font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-family: var(--police);
   font-size: 15px;
 }
 
@@ -692,6 +693,17 @@ body.redimensionnement * { cursor: col-resize !important; }
 .reglage-ligne { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
 .reglage-ligne button { padding: 5px 12px; border: 1px solid var(--bordure); white-space: nowrap; }
 .reglage-ligne button:disabled { opacity: 0.4; cursor: default; }
+.reglage-ligne select {
+  font: inherit;
+  color: inherit;
+  background: none;
+  padding: 5px 12px;
+  border: 1px solid var(--bordure);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.reglage-ligne select:hover { background: var(--survol); }
+.reglage-ligne select option { background: var(--fond); color: var(--texte); }
 
 /* ===== Déplacer vers… ===== */
 .deplacer-ligne { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; padding: 6px 8px; border-radius: 6px; }

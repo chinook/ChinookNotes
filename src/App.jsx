@@ -15,6 +15,7 @@ import { EmojisContext } from './emoji/Icone.jsx';
 import { instancier } from './modeles/integres.js';
 import { importerLot } from './import/importer.js';
 import { menuPage, menuSidebarVide } from './menus.js';
+import { POLICES } from './polices.js';
 
 const LARGEUR_SIDEBAR_DEFAUT = 260;
 const ZOOM_MIN = 0.5;
@@ -54,6 +55,7 @@ export default function App() {
   const [apercuId, setApercuId] = useState(null);          // ligne de base affichée dans le volet de droite
   const [pageCopiee, setPageCopiee] = useState(null);      // id de la page mise de côté par « Copier »
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'clair');
+  const [police, setPolice] = useState(() => localStorage.getItem('police') || 'sora');
   const [zoom, setZoom] = useState(1);
   const [zoomAffiche, setZoomAffiche] = useState(null);    // petit indicateur « Zoom : 110 % »
   const [largeurSidebar, setLargeurSidebar] = useState(LARGEUR_SIDEBAR_DEFAUT);
@@ -65,6 +67,11 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--police', (POLICES.find((p) => p.id === police) || POLICES[0]).css);
+    localStorage.setItem('police', police);
+  }, [police]);
 
   // Largeur des pages : pourcentage de la zone d'affichage. Sans réglage, la largeur d'origine s'applique.
   const largeurEnregistree = reglages?.largeurPage ? Number(reglages.largeurPage) : (reglages?.pleineLargeur === '1' ? 100 : null);
@@ -508,6 +515,8 @@ export default function App() {
       {reglagesOuverts && (
         <Reglages
           theme={theme}
+          police={police}
+          onPolice={setPolice}
           zoom={zoom}
           onTheme={() => setTheme(theme === 'clair' ? 'sombre' : 'clair')}
           onZoomInitial={() => appliquerZoom(1)}
