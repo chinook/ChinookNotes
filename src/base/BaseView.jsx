@@ -4,7 +4,7 @@ import Kanban from './Kanban.jsx';
 import ColonneDialog from './ColonneDialog.jsx';
 import Filtres from './Filtres.jsx';
 import ColonnesVisibles from './ColonnesVisibles.jsx';
-import { COLONNE_NOM, lireProprietes, lireSchema, lignesAffichees, versCsv } from './types.js';
+import { COLONNE_NOM, lireProprietes, lireSchema, lignesAffichees, nouvelId, versCsv } from './types.js';
 
 // base : la page de type « base » ; lignes : ses pages enfants ; onChange : recharger la liste des pages
 // onOuvrir : ouvrir une ligne en pleine page ; onApercu : l'ouvrir dans le volet de droite
@@ -66,7 +66,7 @@ export default function BaseView({ base, lignes, onChange, onOuvrir, onApercu })
         ...schema,
         colonnes: schema.colonnes.filter((x) => x.id !== col.id),
         groupe: schema.groupe === col.id ? null : schema.groupe,
-        tri: schema.tri?.col === col.id ? null : schema.tri,
+        tris: (schema.tris || []).filter((t) => t.col !== col.id),
         masquees: (schema.masquees || []).filter((id) => id !== col.id),
         filtres: { ...schema.filtres, regles: (schema.filtres?.regles || []).filter((r) => r.col !== col.id) },
       });
@@ -93,7 +93,7 @@ export default function BaseView({ base, lignes, onChange, onOuvrir, onApercu })
         modele.push(
           { id: 'tri-asc', label: `Trier « ${colonne.nom} » de A à Z` },
           { id: 'tri-desc', label: `Trier « ${colonne.nom} » de Z à A` },
-          { id: 'tri-aucun', label: 'Retirer le tri', enabled: schema.tri?.col === colonne.id },
+          { id: 'tri-aucun', label: 'Retirer le tri', enabled: (schema.tris || []).some((t) => t.col === colonne.id) },
           { type: 'separator' },
           { id: 'masquer-colonne', label: 'Masquer la colonne', enabled: !estNom },
           { id: 'modifier-colonne', label: 'Modifier la colonne…', enabled: !estNom },
@@ -108,9 +108,9 @@ export default function BaseView({ base, lignes, onChange, onOuvrir, onApercu })
       else if (choix === 'afficher-ligne') actions.afficherLigne(ligne);
       else if (choix === 'effacer') actions.effacerCellule(ligne, colonne);
       else if (choix === 'supprimer-ligne') actions.supprimerLigne(ligne);
-      else if (choix === 'tri-asc') actions.majSchema({ ...schema, tri: { col: colonne.id, sens: 1 } });
-      else if (choix === 'tri-desc') actions.majSchema({ ...schema, tri: { col: colonne.id, sens: -1 } });
-      else if (choix === 'tri-aucun') actions.majSchema({ ...schema, tri: null });
+      else if (choix === 'tri-asc') actions.majSchema({ ...schema, tris: [{ id: nouvelId(), col: colonne.id, sens: 1 }] });
+      else if (choix === 'tri-desc') actions.majSchema({ ...schema, tris: [{ id: nouvelId(), col: colonne.id, sens: -1 }] });
+      else if (choix === 'tri-aucun') actions.majSchema({ ...schema, tris: (schema.tris || []).filter((t) => t.col !== colonne.id) });
       else if (choix === 'masquer-colonne') actions.masquerColonne(colonne);
       else if (choix === 'modifier-colonne') setDialogue({ colonne });
       else if (choix === 'supprimer-colonne') actions.supprimerColonne(colonne);
@@ -156,7 +156,11 @@ export default function BaseView({ base, lignes, onChange, onOuvrir, onApercu })
         )}
         <span style={{ flex: 1 }} />
         {message && <span className="aide">{message}</span>}
-        <Filtres schema={schema} onChange={(filtres) => actions.majSchema({ ...schema, filtres })} />
+        <Filtres
+          schema={schema}
+          onChange={(filtres) => actions.majSchema({ ...schema, filtres })}
+          onTris={(tris) => actions.majSchema({ ...schema, tris })}
+        />
         <ColonnesVisibles schema={schema} onChange={(masquees) => actions.majSchema({ ...schema, masquees })} />
         {idsMasquees.length > 0 && (
           <button className={'base-outil' + (voirMasquees ? ' actif' : '')} onClick={() => setVoirMasquees((v) => !v)} title="Afficher temporairement les lignes masquées">

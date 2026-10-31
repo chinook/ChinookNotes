@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Cellule from './Cellule.jsx';
-import { COLONNE_NOM, TYPES } from './types.js';
+import { COLONNE_NOM, TYPES, trisApresClic, trisValides } from './types.js';
 
 const LARGEUR_NOM = 260;
 const LARGEUR_COLONNE = 170;
@@ -18,12 +18,8 @@ export default function Table({ schema, lignes, actions }) {
   const largeur = (id) => largeursLive[id] ?? schema.largeurs?.[id] ?? (id === 'titre' ? LARGEUR_NOM : LARGEUR_COLONNE);
   const total = largeur('titre') + visibles.reduce((n, c) => n + largeur(c.id), 0) + 34 + 30;
 
-  const cycleTri = (col) => {
-    const t = schema.tri;
-    if (!t || t.col !== col) actions.majSchema({ ...schema, tri: { col, sens: 1 } });
-    else if (t.sens === 1) actions.majSchema({ ...schema, tri: { col, sens: -1 } });
-    else actions.majSchema({ ...schema, tri: null });
-  };
+  // Clic : trier cette colonne seule ; Maj + clic : l'ajouter aux critères de tri (voir le panneau « Filtres et tri »)
+  const cycleTri = (col, e) => actions.majSchema({ ...schema, tris: trisApresClic(trisValides(schema), col, e.shiftKey) });
 
   // Le bord droit d'un en-tête se saisit pour changer la largeur de la colonne
   function redimensionner(e, id) {
@@ -60,7 +56,12 @@ export default function Table({ schema, lignes, actions }) {
     actions.majSchema({ ...schema, colonnes });
   }
 
-  const flecheTri = (id) => (schema.tri?.col === id ? (schema.tri.sens === 1 ? ' ↑' : ' ↓') : '');
+  // Flèche du tri, suivie du rang quand il y a plusieurs critères (↑1, ↓2…)
+  const tris = trisValides(schema);
+  const flecheTri = (id) => {
+    const i = tris.findIndex((t) => t.col === id);
+    return i < 0 ? '' : ` ${tris[i].sens === 1 ? '↑' : '↓'}${tris.length > 1 ? i + 1 : ''}`;
+  };
   const sommes = (c) => (c.type === 'nombre'
     ? lignes.reduce((n, l) => n + (typeof l.valeurs[c.id] === 'number' ? l.valeurs[c.id] : 0), 0)
     : null);
@@ -80,7 +81,7 @@ export default function Table({ schema, lignes, actions }) {
           <tr>
             <th className="th-titre" onContextMenu={(e) => { e.preventDefault(); actions.menu(null, COLONNE_NOM); }}>
               <div className="th-contenu">
-                <button className="th-nom" onClick={() => cycleTri('titre')} title="Trier">
+                <button className="th-nom" onClick={(e) => cycleTri('titre', e)} title="Trier (Maj + clic : ajouter un niveau de tri)">
                   <span className="th-icone">Aa</span> Nom{flecheTri('titre')}
                 </button>
               </div>
@@ -99,7 +100,7 @@ export default function Table({ schema, lignes, actions }) {
                 onContextMenu={(e) => { e.preventDefault(); actions.menu(null, c); }}
               >
                 <div className="th-contenu">
-                  <button className="th-nom" onClick={() => cycleTri(c.id)} title="Trier (glisser pour déplacer la colonne)">
+                  <button className="th-nom" onClick={(e) => cycleTri(c.id, e)} title="Trier (Maj + clic : ajouter un niveau de tri ; glisser pour déplacer la colonne)">
                     <span className="th-icone">{TYPES.find((t) => t.id === c.type)?.icone}</span> {c.nom}{flecheTri(c.id)}
                   </button>
                   <button className="th-menu" onClick={() => actions.modifierColonne(c)} title="Modifier la colonne">⋯</button>

@@ -40,18 +40,19 @@ export function schemaVide() {
     ],
     vue: 'table',
     groupe: null,
-    tri: null,
+    tris: [],
   };
 }
 
-// Les JSON viennent de la base de données : on tolère l'absence ou l'abîme
+// Les JSON viennent de la base de données : on tolère l'absence ou l'abîme.
+// « tris » : les critères de tri par ordre de priorité, [{ id, col, sens }] (sens : 1 croissant, -1 décroissant).
+// Un ancien schéma n'avait qu'un seul tri (« tri : { col, sens } ») : il devient le premier critère.
 export function lireSchema(json) {
-  try {
-    const s = typeof json === 'string' ? JSON.parse(json) : json;
-    return { colonnes: [], vue: 'table', groupe: null, tri: null, ...(s || {}) };
-  } catch {
-    return { colonnes: [], vue: 'table', groupe: null, tri: null };
-  }
+  let s = null;
+  try { s = typeof json === 'string' ? JSON.parse(json) : json; } catch { /* schéma illisible : valeurs par défaut */ }
+  const { tri, ...reste } = s && typeof s === 'object' ? s : {};
+  const tris = Array.isArray(reste.tris) ? reste.tris : (tri?.col ? [{ id: 'tri-1', col: tri.col, sens: tri.sens === -1 ? -1 : 1 }] : []);
+  return { colonnes: [], vue: 'table', groupe: null, ...reste, tris };
 }
 
 export function lireProprietes(json) {
@@ -86,12 +87,38 @@ function cleTri(col, v) {
   return estVide(v) ? null : texteValeur(col, v).toLowerCase();
 }
 
-export function comparer(col, a, b) {
+// sens : 1 croissant, -1 décroissant. Les valeurs vides restent toujours en dernier, dans les deux sens.
+export function comparer(col, a, b, sens = 1) {
   const x = cleTri(col, a);
   const y = cleTri(col, b);
-  if (x === null || x === -1) return y === null || y === -1 ? 0 : 1;   // les vides en dernier
-  if (y === null || y === -1) return -1;
-  return typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'fr', { numeric: true });
+  const xVide = x === null || x === -1;
+  const yVide = y === null || y === -1;
+  if (xVide || yVide) return xVide === yVide ? 0 : xVide ? 1 : -1;
+  return sens * (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'fr', { numeric: true }));
+}
+
+// Critères de tri encore valides (la colonne n'a pas été supprimée), par ordre de priorité
+export function trisValides(schema) {
+  return (schema.tris || []).filter((t) => t.col === 'titre' || schema.colonnes.some((c) => c.id === t.col));
+}
+
+function comparerSelon(tri, a, b, schema) {
+  if (tri.col === 'titre') return comparer(COLONNE_NOM, a.titre, b.titre, tri.sens);
+  const col = schema.colonnes.find((c) => c.id === tri.col);
+  return col ? comparer(col, a.valeurs[col.id], b.valeurs[col.id], tri.sens) : 0;
+}
+
+// Clic sur un en-tête de colonne : croissant, puis décroissant, puis plus de tri.
+// Sans « ajouter », ce tri remplace les autres ; avec « ajouter » (Maj + clic), il s'ajoute en dernier ou change à sa place.
+export function trisApresClic(tris, col, ajouter) {
+  const existant = tris.find((t) => t.col === col);
+  if (ajouter) {
+    if (!existant) return [...tris, { id: nouvelId(), col, sens: 1 }];
+    if (existant.sens === 1) return tris.map((t) => (t.col === col ? { ...t, sens: -1 } : t));
+    return tris.filter((t) => t.col !== col);
+  }
+  if (tris.length === 1 && existant) return existant.sens === 1 ? [{ ...existant, sens: -1 }] : [];
+  return [{ id: nouvelId(), col, sens: 1 }];
 }
 
 // Lignes à afficher : filtres de la vue, lignes masquées, recherche rapide, puis tri.
@@ -106,12 +133,16 @@ export function lignesAffichees(lignes, schema, filtre, options = {}) {
     res = res.filter((l) => (l.titre || '').toLowerCase().includes(f)
       || schema.colonnes.some((c) => texteValeur(c, l.valeurs[c.id]).toLowerCase().includes(f)));
   }
-  const tri = schema.tri;
-  if (tri) {
-    const col = schema.colonnes.find((c) => c.id === tri.col);
-    res.sort((a, b) => tri.sens * (tri.col === 'titre'
-      ? (a.titre || '').localeCompare(b.titre || '', 'fr', { numeric: true })
-      : (col ? comparer(col, a.valeurs[col.id], b.valeurs[col.id]) : 0)));
+  // Plusieurs critères : le premier tranche, le suivant départage les égalités, et ainsi de suite
+  const tris = trisValides(schema);
+  if (tris.length > 0) {
+    res.sort((a, b) => {
+      for (const t of tris) {
+        const r = comparerSelon(t, a, b, schema);
+        if (r !== 0) return r;
+      }
+      return 0;
+    });
   }
   return res;
 }
