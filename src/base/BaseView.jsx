@@ -5,6 +5,7 @@ import ColonneDialog from './ColonneDialog.jsx';
 import Filtres from './Filtres.jsx';
 import ColonnesVisibles from './ColonnesVisibles.jsx';
 import { COLONNE_NOM, lireProprietes, lireSchema, lignesAffichees, nouvelId, versCsv } from './types.js';
+import { actionCorbeille, actionCreation, actionModification, enregistrer } from '../historiqueActions.js';
 
 // base : la page de type « base » ; lignes : ses pages enfants ; onChange : recharger la liste des pages
 // onOuvrir : ouvrir une ligne en pleine page ; onApercu : l'ouvrir dans le volet de droite
@@ -25,32 +26,44 @@ export default function BaseView({ base, lignes, onChange, onOuvrir, onApercu })
   const actions = {
     ouvrir: (id) => (onApercu ? onApercu(id) : onOuvrir(id)),
     ouvrirPleine: onOuvrir,
+    // Tri, filtres, colonnes, vue : tout le schéma est un seul JSON, donc annuler remet l'ancien
     async majSchema(s) {
-      await window.api.modifierPage(base.id, { schema: JSON.stringify(s) });
+      const avant = base.schema ?? null;
+      const apres = JSON.stringify(s);
+      await window.api.modifierPage(base.id, { schema: apres });
+      if (avant !== apres) enregistrer(actionModification(base.id, 'réglages de la base', { schema: avant }, { schema: apres }));
       await onChange();
     },
     async creerLigne(valeurs) {
       const l = await window.api.creerPage(base.id, '');
       if (Object.keys(valeurs).length > 0) await window.api.modifierPage(l.id, { proprietes: JSON.stringify(valeurs) });
+      enregistrer(actionCreation(l.id, 'nouvelle ligne'));
       await onChange();
     },
     async majLigne(ligne, champs) {
+      const avant = Object.fromEntries(Object.keys(champs).map((k) => [k, ligne[k]]));
       await window.api.modifierPage(ligne.id, champs);
+      enregistrer(actionModification(ligne.id, 'modification de ligne', avant, champs));
       await onChange();
     },
     async majValeur(ligne, colId, valeur) {
       const valeurs = { ...lireProprietes(ligne.proprietes) };
       if (valeur === null || valeur === undefined) delete valeurs[colId]; else valeurs[colId] = valeur;
-      await window.api.modifierPage(ligne.id, { proprietes: JSON.stringify(valeurs) });
+      const avant = ligne.proprietes ?? '{}';
+      const apres = JSON.stringify(valeurs);
+      await window.api.modifierPage(ligne.id, { proprietes: apres });
+      if (avant !== apres) enregistrer(actionModification(ligne.id, 'modification de cellule', { proprietes: avant }, { proprietes: apres }));
       await onChange();
     },
     async supprimerLigne(ligne) {
       // récupérable depuis la corbeille : pas de confirmation
       await window.api.mettreALaCorbeille(ligne.id);
+      enregistrer(actionCorbeille(ligne.id, 'suppression de ligne'));
       await onChange();
     },
     async dupliquerLigne(ligne) {
-      await window.api.dupliquerPage(ligne.id);
+      const copie = await window.api.dupliquerPage(ligne.id);
+      enregistrer(actionCreation(copie.id, 'ligne dupliquée'));
       await onChange();
     },
     masquerLigne: (ligne) => actions.majSchema({ ...schema, lignesMasquees: [...new Set([...(schema.lignesMasquees || []), ligne.id])] }),

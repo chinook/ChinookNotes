@@ -17,6 +17,7 @@ import { importerLot } from './import/importer.js';
 import { menuPage, menuSidebarVide } from './menus.js';
 import { POLICES } from './polices.js';
 import { PagesContext } from './pagesContext.js';
+import { actionCorbeille, actionCreation, actionModification, annuler, annulerSiDerniere, enregistrer, refaire, retirer } from './historiqueActions.js';
 import Volets from './Volets.jsx';
 import { MAX_VOLETS, majTailles, nouveauVolet, remplacerVolet, retirerVolet, scinder, trouverVolet, volets } from './volets.js';
 
@@ -60,6 +61,7 @@ export default function App() {
   const [pageCopiee, setPageCopiee] = useState(null);      // id de la page mise de côté par « Copier »
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'clair');
   const [police, setPolice] = useState(() => localStorage.getItem('police') || 'sora');
+  const [versionVues, setVersionVues] = useState(0);     // change après un annuler / refaire : les pages ouvertes se rechargent
   const [sidebarCachee, setSidebarCachee] = useState(() => localStorage.getItem('sidebarCachee') === '1');
   const [zoom, setZoom] = useState(1);
   const [zoomAffiche, setZoomAffiche] = useState(null);    // petit indicateur « Zoom : 110 % »
@@ -216,6 +218,40 @@ export default function App() {
     chargerEmojis();
   }, [recharger, chargerEmojis]);
 
+  // Ctrl+Z annule la dernière action (page, ligne, cellule, réglage de base) ; Ctrl+Y ou Ctrl+Maj+Z la refait.
+  // Dans un champ de saisie ou dans l'éditeur, Ctrl+Z annule la frappe en cours : on ne s'en mêle pas.
+  useEffect(() => {
+    let enCours = false;
+    const surTouche = async (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      const k = e.key.toLowerCase();
+      const defaire = k === 'z' && !e.shiftKey;
+      if (!defaire && !(k === 'y' || (k === 'z' && e.shiftKey))) return;
+      if (e.target.closest?.('input, textarea, select, [contenteditable="true"], [contenteditable=""]')) return;
+      if (document.querySelector('.dialogue-fond')) return;
+      e.preventDefault();
+      if (enCours) return;
+      enCours = true;
+      try {
+        const r = await (defaire ? annuler() : refaire());
+        if (!r) {
+          setToast({ id: Date.now(), message: defaire ? 'Rien à annuler' : 'Rien à refaire' });
+          return;
+        }
+        await recharger();
+        setVersionVues((v) => v + 1);
+        setToast({
+          id: Date.now(),
+          message: r.erreur ? `Impossible de ${defaire ? 'annuler' : 'refaire'} : ${r.libelle}` : `${defaire ? '↩ Annulé' : '↪ Refait'} : ${r.libelle}`,
+        });
+      } finally {
+        enCours = false;
+      }
+    };
+    window.addEventListener('keydown', surTouche);
+    return () => window.removeEventListener('keydown', surTouche);
+  }, [recharger]);
+
   // Message en bas de l'écran, avec une action facultative (« Annuler »)
   useEffect(() => {
     if (!toast) return undefined;
@@ -250,7 +286,7 @@ export default function App() {
     }
     return (
       <PageView
-        key={meta.id}
+        key={`${meta.id}:${versionVues}`}
         id={meta.id}
         actif={actif}
         chemin={cheminDe(meta)}
@@ -364,6 +400,7 @@ export default function App() {
 
   async function creer(parentId) {
     const page = await window.api.creerPage(parentId, '');
+    enregistrer(actionCreation(page.id, 'nouvelle page'));
     await recharger();
     if (parentId != null) setOuverts((o) => new Set(o).add(parentId));
     choisir(page.id);
@@ -379,6 +416,7 @@ export default function App() {
       await window.api.modifierPage(page.id, { icone, couverture, contenu });
     }
     setSelecteurOuvert(false);
+    enregistrer(actionCreation(page.id, 'nouvelle page'));
     await recharger();
     if (parentId != null) setOuverts((o) => new Set(o).add(parentId));
     choisir(page.id);
@@ -388,6 +426,8 @@ export default function App() {
   async function mettreALaCorbeille(id) {
     const page = pages.find((p) => p.id === id);
     await window.api.mettreALaCorbeille(id);
+    const action = actionCorbeille(id, `« ${page?.titre || 'Sans titre'} » mise à la corbeille`);
+    enregistrer(action);
     const liste = await recharger();
     if (!liste.some((p) => p.id === courante)) {
       setCourante((liste.find((p) => p.id === page?.parent_id) ?? liste[0])?.id ?? null);
@@ -397,13 +437,20 @@ export default function App() {
       message: `« ${page?.titre || 'Sans titre'} » déplacée dans la corbeille`,
       action: {
         label: 'Annuler',
-        fn: async () => { await window.api.restaurerPage(id); await recharger(); setCourante(id); setToast(null); },
+        fn: async () => {
+          // passe par l'historique pour que Ctrl + Z ne la restaure pas une seconde fois
+          if (!(await annulerSiDerniere(action))) { await window.api.restaurerPage(id); retirer(action); }
+          await recharger();
+          setCourante(id);
+          setToast(null);
+        },
       },
     });
   }
 
   async function dupliquer(id, parentId) {
     const copie = await window.api.dupliquerPage(id, parentId);
+    enregistrer(actionCreation(copie.id, 'page dupliquée'));
     await recharger();
     if (parentId != null) setOuverts((o) => new Set(o).add(parentId));
     choisir(copie.id);
@@ -414,6 +461,7 @@ export default function App() {
     const page = pages.find((p) => p.id === id);
     if (page && page.titre !== titre) {
       await window.api.modifierPage(id, { titre });
+      enregistrer(actionModification(id, 'nouveau nom de page', { titre: page.titre }, { titre }));
       await recharger();
     }
   }
@@ -423,8 +471,22 @@ export default function App() {
     const nouvelle = await window.api.creerPage(page.parent_id ?? null, '');
     const freres = (await window.api.listePages()).filter((p) => (p.parent_id ?? null) === (page.parent_id ?? null) && p.id !== nouvelle.id);
     await window.api.deplacerPage(nouvelle.id, page.parent_id ?? null, freres.findIndex((p) => p.id === page.id) + 1);
+    enregistrer(actionCreation(nouvelle.id, 'nouvelle page'));
     await recharger();
     choisir(nouvelle.id);
+  }
+
+  // Déplace une page en retenant son ancien emplacement, pour pouvoir annuler
+  async function deplacerAnnulable(id, parentId, position) {
+    const page = pages.find((p) => p.id === id);
+    const ancienParent = page?.parent_id ?? null;
+    const ancienRang = pages.filter((p) => (p.parent_id ?? null) === ancienParent).findIndex((p) => p.id === id);
+    await window.api.deplacerPage(id, parentId, position);
+    enregistrer({
+      libelle: 'déplacement de page',
+      annuler: () => window.api.deplacerPage(id, ancienParent, ancienRang),
+      refaire: () => window.api.deplacerPage(id, parentId, position),
+    });
   }
 
   // Monter / descendre d'un cran parmi les pages de même niveau
@@ -433,14 +495,14 @@ export default function App() {
     const actuelle = pages.filter((p) => (p.parent_id ?? null) === (page.parent_id ?? null)).findIndex((p) => p.id === page.id);
     const cible = actuelle + sens;
     if (cible < 0 || cible > freres.length) return;
-    await window.api.deplacerPage(page.id, page.parent_id ?? null, cible);
+    await deplacerAnnulable(page.id, page.parent_id ?? null, cible);
     await recharger();
   }
 
   async function deplacerVers(page, parentId) {
     setDeplacerId(null);
     try {
-      await window.api.deplacerPage(page.id, parentId, null);
+      await deplacerAnnulable(page.id, parentId, null);
     } catch (e) {
       window.alert(String(e?.message || e));
       return;
@@ -522,7 +584,7 @@ export default function App() {
       position = zone === 'avant' ? i : i + 1;
     }
     try {
-      await window.api.deplacerPage(id, parentId, position);
+      await deplacerAnnulable(id, parentId, position);
     } catch (e) {
       window.alert(String(e?.message || e));
       return;
@@ -532,7 +594,7 @@ export default function App() {
   }
 
   async function deplacerRacine(id) {
-    await window.api.deplacerPage(id, null, null);
+    await deplacerAnnulable(id, null, null);
     await recharger();
   }
 
@@ -598,7 +660,7 @@ export default function App() {
       </main>
       {apercuId != null && pages.some((p) => p.id === apercuId) && (
         <ApercuPage
-          key={apercuId}
+          key={`${apercuId}:${versionVues}`}
           id={apercuId}
           pages={pages}
           largeur={Number(reglages?.largeurApercu) || 520}
@@ -660,7 +722,13 @@ export default function App() {
       {pagePourIcone && (
         <EmojiPicker
           valeur={pagePourIcone.icone}
-          onChoisir={async (v) => { setIconePageId(null); await window.api.modifierPage(pagePourIcone.id, { icone: v }); await recharger(); }}
+          onChoisir={async (v) => {
+            setIconePageId(null);
+            const avant = pagePourIcone.icone ?? null;
+            await window.api.modifierPage(pagePourIcone.id, { icone: v });
+            enregistrer(actionModification(pagePourIcone.id, "nouvelle icône de page", { icone: avant }, { icone: v }));
+            await recharger();
+          }}
           onFermer={() => setIconePageId(null)}
           onEmojisChange={chargerEmojis}
         />

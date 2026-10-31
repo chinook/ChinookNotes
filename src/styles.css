@@ -570,8 +570,25 @@ kbd {
 .pastille { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 4px; font-size: 13px; white-space: nowrap; }
 .pastille-x { padding: 0 2px; font-size: 12px; opacity: 0.6; }
 .pastille-x:hover { opacity: 1; }
-.cell-select { position: relative; padding: 6px 8px; min-height: 31px; }
-.cell-select select, .cell-ajout select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.cell-select { position: relative; padding: 6px 8px; min-height: 31px; cursor: pointer; outline: none; }
+.cell-select:hover { background: var(--survol); }
+.cell-select:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+/* Liste des options (Sélection / Multi-sélection) */
+.menu-options {
+  position: fixed;
+  z-index: 60;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 10px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.3);
+  color: var(--texte);
+}
+.menu-option { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 8px; border-radius: 6px; text-align: left; }
+.menu-option.actif { background: var(--survol); }
+.menu-option .coche { margin-left: auto; color: var(--accent); }
 .cell-multi { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px 8px; min-height: 31px; }
 .cell-ajout { position: relative; width: 22px; height: 22px; text-align: center; line-height: 22px; color: var(--texte-doux); border-radius: 4px; cursor: pointer; }
 .cell-ajout:hover { background: var(--survol); }
