@@ -175,7 +175,9 @@ button {
   padding: 1px 5px;
   font-family: Consolas, 'Courier New', monospace;
   font-size: 0.88em;
+  color: #c0392b;
 }
+:root[data-theme='sombre'] .ProseMirror code { color: #ff7b72; }
 .ProseMirror img { max-width: 100%; height: auto; border-radius: 4px; }
 .ProseMirror img.ProseMirror-selectednode { outline: 2px solid var(--accent); }
 
@@ -194,7 +196,8 @@ button {
   padding: 12px 14px;
   overflow-x: auto;
 }
-.ProseMirror pre code { background: none; padding: 0; font-size: 13px; line-height: 1.5; }
+.ProseMirror pre code { background: none; padding: 0; font-size: 13px; line-height: 1.5; color: inherit; }
+:root[data-theme='sombre'] .ProseMirror pre code { color: inherit; }
 .hljs-comment, .hljs-quote { color: #8a8f98; font-style: italic; }
 .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-type { color: #c0392b; }
 .hljs-string, .hljs-title, .hljs-attr { color: #1a7f5a; }
@@ -293,6 +296,44 @@ button {
 .dialogue-large { width: 560px; max-height: 80vh; overflow: auto; }
 .avertissements { margin: 0; padding-left: 18px; font-size: 13px; color: var(--texte-doux); }
 .ProseMirror a { color: var(--accent); text-decoration: underline; cursor: pointer; }
+
+/* Liens vers une page : icône de la page à gauche, texte en gras (blanc en thème sombre, noir en thème clair) */
+.ProseMirror a[href^='page:'] { color: #000; font-weight: 700; text-decoration: none; }
+:root[data-theme='sombre'] .ProseMirror a[href^='page:'] { color: #fff; }
+.ProseMirror a[href^='page:']:hover { text-decoration: underline; }
+.ProseMirror .lien-page[data-icone]::before { content: attr(data-icone); display: inline-block; margin-right: 0.3em; }
+.ProseMirror .lien-page-img::before {
+  content: '';
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.3em;
+  vertical-align: -0.2em;
+  background: var(--lien-img) center / contain no-repeat;
+}
+
+/* Recherche dans la page (Ctrl + F) */
+.recherche-trouve { background: rgba(255, 212, 0, 0.35); border-radius: 2px; }
+.recherche-courant { background: #f5a623; color: #000; border-radius: 2px; }
+.barre-recherche {
+  position: fixed;
+  top: 12px;
+  right: 28px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.barre-recherche input { width: 220px; font: inherit; color: inherit; background: none; border: 1px solid var(--bordure); border-radius: 4px; padding: 4px 8px; outline: none; }
+.barre-recherche input:focus { border-color: var(--accent); }
+.barre-recherche button { padding: 2px 8px; }
+.barre-recherche button:hover { background: var(--survol); }
+.recherche-compte { min-width: 64px; text-align: center; color: var(--texte-doux); font-size: 13px; white-space: nowrap; }
 
 /* Recherche (Ctrl+K) */
 .sidebar-recherche {
@@ -672,8 +713,9 @@ button.page-icone .emoji-img { width: 64px; height: 64px; }
 body.redimensionnement { cursor: col-resize !important; user-select: none; }
 body.redimensionnement * { cursor: col-resize !important; }
 .sidebar-pied { justify-content: space-between; }
-.pied-profil { font-size: 16px; }
-.pied-profil .emoji-img { width: 20px; height: 20px; }
+.pied-profil { font-size: 20px; }
+.pied-profil .emoji-img { width: 25px; height: 25px; }
+.sidebar-pied button[title='Réglages'] { font-size: 18.75px; }
 
 /* ===== Profil ===== */
 .profil { width: 560px; }

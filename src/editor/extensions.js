@@ -8,10 +8,12 @@ import { Details, DetailsSummary, DetailsContent } from '@tiptap/extension-detai
 import { Mathematics } from '@tiptap/extension-mathematics';
 import { createLowlight, common } from 'lowlight';
 import { Callout } from './Callout.js';
+import { LiensPages } from './liensPages.js';
+import { RechercheDansPage } from './rechercheDansPage.js';
 
 const lowlight = createLowlight(common);
 
-export function creerExtensions({ onMathClick }) {
+export function creerExtensions({ onMathClick, iconeLien }) {
   return [
     StarterKit.configure({
       codeBlock: false,
@@ -35,6 +37,8 @@ export function creerExtensions({ onMathClick }) {
       blockOptions: { onClick: (node, pos) => onMathClick('block', node.attrs.latex, pos) },
     }),
     Callout,
+    LiensPages.configure({ icone: iconeLien }),
+    RechercheDansPage,
   ];
 }
 

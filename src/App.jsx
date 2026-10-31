@@ -16,6 +16,7 @@ import { instancier } from './modeles/integres.js';
 import { importerLot } from './import/importer.js';
 import { menuPage, menuSidebarVide } from './menus.js';
 import { POLICES } from './polices.js';
+import { PagesContext } from './pagesContext.js';
 
 const LARGEUR_SIDEBAR_DEFAUT = 260;
 const ZOOM_MIN = 0.5;
@@ -67,6 +68,8 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  const pagesParId = useMemo(() => Object.fromEntries(pages.map((p) => [p.id, { icone: p.icone, type: p.type }])), [pages]);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--police', (POLICES.find((p) => p.id === police) || POLICES[0]).css);
@@ -419,6 +422,7 @@ export default function App() {
 
   return (
     <EmojisContext.Provider value={emojis}>
+    <PagesContext.Provider value={pagesParId}>
     <div className="app">
       <Sidebar
         arbre={arbre}
@@ -561,6 +565,7 @@ export default function App() {
         </div>
       )}
     </div>
+    </PagesContext.Provider>
     </EmojisContext.Provider>
   );
 }

@@ -115,7 +115,7 @@ export default function PageView({ id, chemin, onSelect, onChange, onExporter, m
             {baseParente && (
               <ProprietesLigne base={baseParente} proprietes={page.proprietes} onChange={(proprietes) => modifier({ proprietes })} />
             )}
-            <Editor contenu={page.contenu} onChange={(contenu) => modifier({ contenu })} onNavigate={onSelect} />
+            <Editor contenu={page.contenu} onChange={(contenu) => modifier({ contenu })} onNavigate={onSelect} chercher={!apercu} />
           </>
         )}
         {lignesModification(page).length > 0 && (

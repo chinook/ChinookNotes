@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import 'katex/dist/katex.min.css';
 import { creerExtensions, lireContenu } from './extensions.js';
+import { cleRecherche } from './rechercheDansPage.js';
 import Toolbar from './Toolbar.jsx';
 import { executerAction, trouverBloc } from './blocs.js';
 import { menuEditeur } from '../menus.js';
+import { EmojisContext, estImagePerso } from '../emoji/Icone.jsx';
+import { PagesContext } from '../pagesContext.js';
 
 function lireImage(fichier) {
   return new Promise((resolve) => {
@@ -14,13 +17,30 @@ function lireImage(fichier) {
   });
 }
 
-export default function Editor({ contenu, onChange, onNavigate }) {
+export default function Editor({ contenu, onChange, onNavigate, chercher = false }) {
   const [mathEdition, setMathEdition] = useState(null);
+  const [rechercheOuverte, setRechercheOuverte] = useState(false);
   const editeurRef = useRef(null);
+  const champRechercheRef = useRef(null);
+  const pages = useContext(PagesContext);
+  const emojis = useContext(EmojisContext);
+
+  // Icône affichée à gauche d'un lien vers une page ; relue à chaque rendu pour suivre les changements d'icône
+  const iconeLienRef = useRef(null);
+  iconeLienRef.current = (id) => {
+    const p = pages[id];
+    if (!p) return null;
+    if (estImagePerso(p.icone)) {
+      const image = emojis[p.icone.slice(6)]?.image;
+      if (image) return { image };
+    }
+    return { emoji: (!estImagePerso(p.icone) && p.icone) || (p.type === 'base' ? '🗃️' : '📄') };
+  };
 
   const extensions = useMemo(
     () => creerExtensions({
       onMathClick: (type, latex, pos) => setMathEdition({ type, latex, pos }),
+      iconeLien: (id) => iconeLienRef.current(id),
     }),
     [],
   );
@@ -60,6 +80,60 @@ export default function Editor({ contenu, onChange, onNavigate }) {
     editor,
     selector: ({ editor: e }) => e?.state.selection,
   });
+
+  const recherche = useEditorState({
+    editor,
+    selector: ({ editor: e }) => (e ? cleRecherche.getState(e.state) : null),
+  });
+
+  // Un lien dont l'icône ou la page a changé se redessine par une transaction sans effet sur le contenu
+  useEffect(() => {
+    editor?.view.dispatch(editor.state.tr.setMeta('liensPages', true));
+  }, [editor, pages, emojis]);
+
+  function ouvrirRecherche() {
+    if (!editor) return;
+    const { from, to, empty } = editor.state.selection;
+    const choisi = empty ? '' : editor.state.doc.textBetween(from, to, ' ');
+    setRechercheOuverte(true);
+    if (choisi && choisi.length <= 80) chercherMot(choisi);
+    requestAnimationFrame(() => { champRechercheRef.current?.focus(); champRechercheRef.current?.select(); });
+  }
+
+  function chercherMot(mot) {
+    editor.view.dispatch(editor.state.tr.setMeta(cleRecherche, { requete: mot }));
+  }
+
+  function fermerRecherche() {
+    chercherMot('');
+    setRechercheOuverte(false);
+    editor.commands.focus();
+  }
+
+  function occurrenceSuivante(sens) {
+    const { trouves, index } = cleRecherche.getState(editor.state);
+    if (trouves.length === 0) return;
+    editor.view.dispatch(editor.state.tr.setMeta(cleRecherche, { index: index + sens }));
+  }
+
+  // Ctrl+F (ou Cmd+F) ouvre la recherche dans la page, où que soit le curseur
+  useEffect(() => {
+    if (!chercher) return undefined;
+    const surTouche = (e) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        ouvrirRecherche();
+      }
+    };
+    window.addEventListener('keydown', surTouche);
+    return () => window.removeEventListener('keydown', surTouche);
+  });
+
+  // L'occurrence courante reste visible
+  useEffect(() => {
+    if (!rechercheOuverte) return;
+    editor?.view.dom.querySelector('.recherche-courant')?.scrollIntoView({ block: 'center' });
+  }, [rechercheOuverte, recherche?.requete, recherche?.index]);
 
   if (!editor) return null;
 
@@ -104,6 +178,26 @@ export default function Editor({ contenu, onChange, onNavigate }) {
 
   return (
     <div className="editeur">
+      {rechercheOuverte && (
+        <div className="barre-recherche">
+          <input
+            ref={champRechercheRef}
+            value={recherche.requete}
+            placeholder="Chercher dans la page"
+            onChange={(e) => chercherMot(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); occurrenceSuivante(e.shiftKey ? -1 : 1); }
+              if (e.key === 'Escape') { e.preventDefault(); fermerRecherche(); }
+            }}
+          />
+          <span className="recherche-compte">
+            {recherche.requete ? (recherche.trouves.length ? `${recherche.index + 1} / ${recherche.trouves.length}` : '0 résultat') : ''}
+          </span>
+          <button onClick={() => occurrenceSuivante(-1)} title="Précédent (Maj + Entrée)">↑</button>
+          <button onClick={() => occurrenceSuivante(1)} title="Suivant (Entrée)">↓</button>
+          <button onClick={fermerRecherche} title="Fermer (Échap)">✕</button>
+        </div>
+      )}
       <Toolbar editor={editor} onImages={insererImages} />
       <div onClick={ouvrirLien} onContextMenu={menuContextuel}>
         <EditorContent editor={editor} className="editeur-contenu" />
