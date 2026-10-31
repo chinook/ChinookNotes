@@ -68,8 +68,46 @@ const NOMS_BLOCS = {
   details: 'le toggle', blockMath: 'l\'équation',
 };
 
-// bloc : { type } (voir trouverBloc dans Editor.jsx) ou null ; aSelection : du texte est sélectionné
-export function menuEditeur(bloc, { aSelection }) {
+// Mise en forme du texte : une case cochée veut dire « déjà appliquée à la sélection »
+const menuFormats = (a) => [
+  { id: 'fmt-gras', label: 'Gras', type: 'checkbox', checked: !!a.gras },
+  { id: 'fmt-italique', label: 'Italique', type: 'checkbox', checked: !!a.italique },
+  { id: 'fmt-souligne', label: 'Souligné', type: 'checkbox', checked: !!a.souligne },
+  { id: 'fmt-barre', label: 'Barré', type: 'checkbox', checked: !!a.barre },
+  { id: 'fmt-code', label: 'Code en ligne', type: 'checkbox', checked: !!a.code },
+];
+
+// Les mêmes blocs que la barre d'outils du haut de la page
+const INSERTIONS = [
+  { id: 'ins-puces', label: 'Liste à puces' },
+  { id: 'ins-numerotee', label: 'Liste numérotée' },
+  { id: 'ins-taches', label: 'Liste de tâches' },
+  separateur,
+  { id: 'ins-citation', label: 'Citation' },
+  { id: 'ins-callout', label: 'Callout' },
+  { id: 'ins-toggle', label: 'Section repliable (toggle)' },
+  { id: 'ins-separateur', label: 'Séparateur' },
+  separateur,
+  { id: 'ins-code', label: 'Bloc de code' },
+  { id: 'ins-tableau', label: 'Tableau' },
+  { id: 'ins-image', label: 'Image…' },
+  { id: 'ins-equation', label: 'Équation en bloc' },
+  { id: 'ins-equation-ligne', label: 'Équation en ligne' },
+];
+
+const MENU_TABLEAU = [
+  { id: 'tab-ligne-plus', label: 'Ajouter une ligne' },
+  { id: 'tab-colonne-plus', label: 'Ajouter une colonne' },
+  { id: 'tab-ligne-moins', label: 'Supprimer la ligne' },
+  { id: 'tab-colonne-moins', label: 'Supprimer la colonne' },
+  { id: 'tab-entete', label: "Ligne d'en-tête" },
+  separateur,
+  { id: 'tab-supprimer', label: 'Supprimer le tableau' },
+];
+
+// bloc : { type } (voir trouverBloc dans Editor.jsx) ou null ; aSelection : du texte est sélectionné ;
+// formats : { gras, italique… } mise en forme à l'endroit du curseur ; dansTableau : le curseur est dans un tableau
+export function menuEditeur(bloc, { aSelection, formats = {}, dansTableau = false }) {
   const nom = bloc ? NOMS_BLOCS[bloc.type] ?? 'le bloc' : null;
   return [
     { label: 'Annuler', role: 'undo' },
@@ -80,6 +118,10 @@ export function menuEditeur(bloc, { aSelection }) {
     { label: 'Coller', role: 'paste' },
     { label: 'Coller sans mise en forme', role: 'pasteAndMatchStyle' },
     { label: 'Tout sélectionner', role: 'selectAll' },
+    separateur,
+    { label: 'Mise en forme', submenu: menuFormats(formats) },
+    { label: 'Insérer', submenu: INSERTIONS },
+    ...(dansTableau ? [{ label: 'Tableau', submenu: MENU_TABLEAU }] : []),
     ...(bloc ? [
       separateur,
       { id: 'dupliquer-bloc', label: `Dupliquer ${nom}` },

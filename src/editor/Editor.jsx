@@ -4,7 +4,8 @@ import 'katex/dist/katex.min.css';
 import { creerExtensions, lireContenu } from './extensions.js';
 import { cleRecherche } from './rechercheDansPage.js';
 import Toolbar from './Toolbar.jsx';
-import { executerAction, trouverBloc } from './blocs.js';
+import { executerAction, executerEdition, trouverBloc } from './blocs.js';
+import BulleSelection from './BulleSelection.jsx';
 import { menuEditeur } from '../menus.js';
 import { EmojisContext, estImagePerso } from '../emoji/Icone.jsx';
 import { PagesContext } from '../pagesContext.js';
@@ -214,8 +215,30 @@ export default function Editor({ contenu, onChange, onNavigate, chercher = false
       try { editor.chain().focus().setTextSelection(hit.pos).run(); } catch { /* nœud sans texte : on garde la sélection */ }
     }
     const bloc = trouverBloc(editor, e.clientX, e.clientY);
-    const choix = await window.api.menuContextuel(menuEditeur(bloc, { aSelection: !editor.state.selection.empty }));
-    if (choix && bloc) executerAction(editor, choix, bloc);
+    const choix = await window.api.menuContextuel(menuEditeur(bloc, {
+      aSelection: !editor.state.selection.empty,
+      formats: {
+        gras: editor.isActive('bold'),
+        italique: editor.isActive('italic'),
+        souligne: editor.isActive('underline'),
+        barre: editor.isActive('strike'),
+        code: editor.isActive('code'),
+      },
+      dansTableau: editor.isActive('table'),
+    }));
+    if (!choix) return;
+    if (choix === 'ins-image') choisirImages();
+    else if (!executerEdition(editor, choix) && bloc) executerAction(editor, choix, bloc);
+  }
+
+  // « Insérer → Image… » du clic droit : le même choix de fichiers que le bouton de la barre d'outils
+  function choisirImages() {
+    const champ = document.createElement('input');
+    champ.type = 'file';
+    champ.accept = 'image/*';
+    champ.multiple = true;
+    champ.onchange = () => insererImages([...champ.files]);
+    champ.click();
   }
 
   function validerMath(latex) {
@@ -257,6 +280,7 @@ export default function Editor({ contenu, onChange, onNavigate, chercher = false
           <button onClick={fermerRecherche} title="Fermer (Échap)">✕</button>
         </div>
       )}
+      <BulleSelection editor={editor} />
       <Toolbar editor={editor} onImages={insererImages} />
       <div onClick={ouvrirLien} onContextMenu={menuContextuel}>
         <EditorContent editor={editor} className="editeur-contenu" />

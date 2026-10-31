@@ -76,6 +76,40 @@ const TRANSFORMER = {
   code: (c) => c.setCodeBlock(),
 };
 
+// Mise en forme, insertion de blocs et opérations sur un tableau : mêmes actions que la barre d'outils.
+// Renvoie true si le choix en fait partie.
+const EDITIONS = {
+  'fmt-gras': (c) => c.toggleBold(),
+  'fmt-italique': (c) => c.toggleItalic(),
+  'fmt-souligne': (c) => c.toggleUnderline(),
+  'fmt-barre': (c) => c.toggleStrike(),
+  'fmt-code': (c) => c.toggleCode(),
+  'ins-puces': (c) => c.toggleBulletList(),
+  'ins-numerotee': (c) => c.toggleOrderedList(),
+  'ins-taches': (c) => c.toggleTaskList(),
+  'ins-citation': (c) => c.toggleBlockquote(),
+  'ins-callout': (c) => c.basculerCallout(),
+  'ins-toggle': (c) => c.setDetails(),
+  'ins-separateur': (c) => c.setHorizontalRule(),
+  'ins-code': (c) => c.toggleCodeBlock(),
+  'ins-tableau': (c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }),
+  'ins-equation': (c) => c.insertBlockMath({ latex: 'E = mc^2' }),
+  'ins-equation-ligne': (c) => c.insertInlineMath({ latex: 'x^2' }),
+  'tab-ligne-plus': (c) => c.addRowAfter(),
+  'tab-colonne-plus': (c) => c.addColumnAfter(),
+  'tab-ligne-moins': (c) => c.deleteRow(),
+  'tab-colonne-moins': (c) => c.deleteColumn(),
+  'tab-entete': (c) => c.toggleHeaderRow(),
+  'tab-supprimer': (c) => c.deleteTable(),
+};
+
+export function executerEdition(editor, choix) {
+  const action = EDITIONS[choix];
+  if (!action) return false;
+  action(editor.chain().focus()).run();
+  return true;
+}
+
 export function executerAction(editor, choix, bloc) {
   if (choix === 'dupliquer-bloc') {
     editor.chain().focus().insertContentAt(bloc.to, bloc.node.toJSON()).run();

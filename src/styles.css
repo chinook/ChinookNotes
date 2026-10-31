@@ -200,6 +200,22 @@ body.redimensionnement-v * { cursor: row-resize !important; }
   border-radius: 4px;
   padding: 3px 6px;
 }
+/* Barre flottante au-dessus du texte sélectionné */
+.bulle-selection {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px;
+  max-width: min(92vw, 560px);
+  padding: 4px;
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3);
+}
+.bulle-selection .sep { align-self: stretch; margin: 2px 3px; }
 .tb { padding: 3px 8px; font-size: 13px; }
 .tb:hover { background: var(--survol); }
 .tb.actif { background: var(--actif); color: var(--accent); }

@@ -57,7 +57,7 @@ ipcMain.handle('emojis:liste', () => db.listeEmojis());
 ipcMain.handle('emojis:creer', (event, emoji) => db.creerEmoji(emoji));
 ipcMain.handle('emojis:supprimer', (event, id) => db.supprimerEmoji(id));
 
-// Menu contextuel natif. modele : [{ id, label, enabled?, role?, submenu?, type?: 'separator' }].
+// Menu contextuel natif. modele : [{ id, label, enabled?, role?, submenu?, type?: 'separator' | 'checkbox', checked? }].
 // Une entrée avec « role » (couper, copier, coller…) est exécutée par le système sur la zone de saisie ;
 // les autres répondent avec leur « id » (null si le menu est fermé sans choix).
 ipcMain.handle('menu:popup', (event, modele) => new Promise((resolve) => {
@@ -66,6 +66,7 @@ ipcMain.handle('menu:popup', (event, modele) => new Promise((resolve) => {
   const convertir = (entrees) => entrees.map((e) => {
     if (e.type === 'separator') return { type: 'separator' };
     const item = { label: e.label, enabled: e.enabled !== false };
+    if (e.type === 'checkbox') { item.type = 'checkbox'; item.checked = !!e.checked; }
     if (e.role) item.role = e.role;
     if (e.submenu) item.submenu = convertir(e.submenu);
     else if (!e.role) item.click = () => finir(e.id);
