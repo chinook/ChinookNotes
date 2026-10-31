@@ -88,7 +88,7 @@ function Noeud({ page, niveau, courante, ouverts, renommageId, onSelect, onBascu
   );
 }
 
-export default function Sidebar({ arbre, courante, ouverts, largeur, avatar, renommageId, onSelect, onBasculer, onCreer, onSupprimer, onRechercher, onDeplacer, onDeplacerRacine, onMenuPage, onMenuVide, onRenommer, onProfil, onReglages, onLargeur, onLargeurFin }) {
+export default function Sidebar({ arbre, courante, ouverts, largeur, avatar, renommageId, onSelect, onBasculer, onCreer, onSupprimer, onRechercher, onDeplacer, onDeplacerRacine, onMenuPage, onMenuVide, onRenommer, onProfil, onReglages, onLargeur, onLargeurFin, onCacher }) {
   const [glisse, setGlisse] = useState(null);
   const [cible, setCible] = useState(null);
   const minuterie = useRef(null);
@@ -177,7 +177,10 @@ export default function Sidebar({ arbre, courante, ouverts, largeur, avatar, ren
   return (
     <aside className="sidebar" style={{ width: largeur }}>
       <div className="sidebar-poignee" onMouseDown={demarrerRedimensionnement} onDoubleClick={() => onLargeurFin(null)} title="Glisser pour changer la largeur (double-clic : largeur d'origine)" />
-      <div className="sidebar-titre">ChinookNotes</div>
+      <div className="sidebar-titre">
+        <span>ChinookNotes</span>
+        <button className="sidebar-cacher" onClick={onCacher} title="Cacher la barre latérale (Ctrl + \)">«</button>
+      </div>
       <button className="sidebar-recherche" onClick={onRechercher}>
         <span>🔍 Rechercher</span>
         <kbd>Ctrl K</kbd>

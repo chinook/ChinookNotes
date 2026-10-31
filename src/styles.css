@@ -52,7 +52,11 @@ button {
   display: flex;
   flex-direction: column;
 }
-.sidebar-titre { padding: 14px 14px 8px; font-weight: 600; }
+.sidebar-titre { display: flex; align-items: center; justify-content: space-between; padding: 14px 10px 8px 14px; font-weight: 600; }
+.sidebar-cacher, .rail-afficher { padding: 2px 8px; font-size: 16px; line-height: 1; color: var(--texte-doux); }
+.sidebar-cacher:hover, .rail-afficher:hover { background: var(--survol); color: var(--texte); }
+/* Bande étroite qui remplace la barre latérale quand elle est cachée */
+.rail { flex: none; width: 38px; display: flex; flex-direction: column; align-items: center; padding-top: 10px; background: var(--fond-sidebar); border-right: 1px solid var(--bordure); }
 .arbre { flex: 1; overflow-y: auto; padding: 4px 6px; }
 .sidebar-pied {
   display: flex;

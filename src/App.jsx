@@ -60,6 +60,7 @@ export default function App() {
   const [pageCopiee, setPageCopiee] = useState(null);      // id de la page mise de côté par « Copier »
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'clair');
   const [police, setPolice] = useState(() => localStorage.getItem('police') || 'sora');
+  const [sidebarCachee, setSidebarCachee] = useState(() => localStorage.getItem('sidebarCachee') === '1');
   const [zoom, setZoom] = useState(1);
   const [zoomAffiche, setZoomAffiche] = useState(null);    // petit indicateur « Zoom : 110 % »
   const [largeurSidebar, setLargeurSidebar] = useState(LARGEUR_SIDEBAR_DEFAUT);
@@ -144,6 +145,22 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCachee', sidebarCachee ? '1' : '0');
+  }, [sidebarCachee]);
+
+  // Ctrl+\ cache ou montre la barre latérale, où que soit le curseur
+  useEffect(() => {
+    const surTouche = (e) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key === '\\') {
+        e.preventDefault();
+        setSidebarCachee((c) => !c);
+      }
+    };
+    window.addEventListener('keydown', surTouche);
+    return () => window.removeEventListener('keydown', surTouche);
+  }, []);
 
   const pagesParId = useMemo(() => Object.fromEntries(pages.map((p) => [p.id, { icone: p.icone, type: p.type, titre: p.titre }])), [pages]);
 
@@ -536,7 +553,12 @@ export default function App() {
     <EmojisContext.Provider value={emojis}>
     <PagesContext.Provider value={pagesParId}>
     <div className="app">
-      <Sidebar
+      {sidebarCachee && (
+        <div className="rail">
+          <button className="rail-afficher" onClick={() => setSidebarCachee(false)} title="Afficher la barre latérale (Ctrl + \)">»</button>
+        </div>
+      )}
+      {!sidebarCachee && <Sidebar
         arbre={arbre}
         courante={courante}
         ouverts={ouverts}
@@ -555,13 +577,14 @@ export default function App() {
         onRenommer={renommer}
         onProfil={() => setProfilOuvert(true)}
         onReglages={() => setReglagesOuverts(true)}
+        onCacher={() => setSidebarCachee(true)}
         onLargeur={setLargeurSidebar}
         onLargeurFin={(px) => {
           const largeur = px ?? LARGEUR_SIDEBAR_DEFAUT;
           setLargeurSidebar(largeur);
           enregistrerReglages({ largeurSidebar: px == null ? null : Math.round(largeur) });
         }}
-      />
+      />}
       <main className="contenu">
         <Volets
           disposition={disposition}
