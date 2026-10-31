@@ -17,6 +17,8 @@ import { importerLot } from './import/importer.js';
 import { menuPage, menuSidebarVide } from './menus.js';
 import { POLICES } from './polices.js';
 import { PagesContext } from './pagesContext.js';
+import Volets from './Volets.jsx';
+import { MAX_VOLETS, majTailles, nouveauVolet, remplacerVolet, retirerVolet, scinder, trouverVolet, volets } from './volets.js';
 
 const LARGEUR_SIDEBAR_DEFAUT = 260;
 const ZOOM_MIN = 0.5;
@@ -38,7 +40,8 @@ function construireArbre(pages) {
 
 export default function App() {
   const [pages, setPages] = useState([]);
-  const [courante, setCourante] = useState(null);
+  const [disposition, setDisposition] = useState(() => nouveauVolet(null)); // arbre des volets (voir volets.js)
+  const [voletActifId, setVoletActifId] = useState(null);                    // null : le premier volet
   const [ouverts, setOuverts] = useState(() => new Set());
   const [importEtat, setImportEtat] = useState(null);
   const [rechercheOuverte, setRechercheOuverte] = useState(false);
@@ -64,12 +67,85 @@ export default function App() {
   const [historique, setHistorique] = useState({ pile: [], index: -1 });
   const dernierNav = useRef(0);
 
+  // ---------- Volets : plusieurs pages côte à côte. « courante » est la page du volet actif,
+  // donc la navigation (choisir, historique, corbeille…) agit sur le volet où se trouve l'utilisateur.
+  const dispositionRef = useRef(disposition);
+  const voletActifRef = useRef(null);
+  const actifId = trouverVolet(disposition, voletActifId) ? voletActifId : volets(disposition)[0].id;
+  voletActifRef.current = actifId;
+  const courante = trouverVolet(disposition, actifId)?.pageId ?? null;
+
+  // Le ref est mis à jour tout de suite : plusieurs changements dans le même événement partent de la bonne disposition
+  const majDisposition = useCallback((arbre) => {
+    dispositionRef.current = arbre;
+    setDisposition(arbre);
+  }, []);
+
+  const activerVolet = useCallback((id) => {
+    if (voletActifRef.current === id) return;
+    voletActifRef.current = id;
+    setVoletActifId(id);
+    setApercuId(null);
+  }, []);
+
+  // Affiche une page dans le volet actif ; si elle est déjà ouverte dans un autre volet, on passe à celui-là
+  const setCourante = useCallback((valeur) => {
+    const d = dispositionRef.current;
+    const actif = trouverVolet(d, voletActifRef.current) ?? volets(d)[0];
+    const pageId = typeof valeur === 'function' ? valeur(actif.pageId) : valeur;
+    const ailleurs = pageId != null ? volets(d).find((v) => v.pageId === pageId && v.id !== actif.id) : null;
+    if (ailleurs) { activerVolet(ailleurs.id); return; }
+    if (pageId !== actif.pageId) majDisposition(remplacerVolet(d, actif.id, (v) => ({ ...v, pageId })));
+  }, [activerVolet, majDisposition]);
+
+  function fermerVolet(id) {
+    const apres = retirerVolet(dispositionRef.current, id);
+    if (!apres) return;
+    majDisposition(apres);
+    if (voletActifRef.current === id) activerVolet(volets(apres)[0].id);
+  }
+
+  // Page glissée depuis la barre latérale : près d'un bord, elle coupe le volet ; au milieu, elle le remplace
+  function deposerPage(voletId, zone, pageId) {
+    if (!pagesRef.current.some((p) => p.id === pageId)) return;
+    const d = dispositionRef.current;
+    const dejaOuverte = volets(d).find((v) => v.pageId === pageId);
+    if (zone === 'centre') {
+      activerVolet(dejaOuverte && dejaOuverte.id !== voletId ? dejaOuverte.id : voletId);
+      choisir(pageId);
+      return;
+    }
+    if (dejaOuverte) { activerVolet(dejaOuverte.id); return; }
+    if (volets(d).length >= MAX_VOLETS) {
+      setToast({ id: Date.now(), message: `${MAX_VOLETS} volets au maximum : ferme-en un avant d'en ouvrir un autre` });
+      return;
+    }
+    const nouveau = nouveauVolet(pageId);
+    majDisposition(scinder(d, voletId, zone, nouveau));
+    activerVolet(nouveau.id);
+    choisir(pageId);
+  }
+
+  // Une page supprimée ou mise à la corbeille depuis ailleurs ferme son volet
+  useEffect(() => {
+    if (pages.length === 0) return;
+    const orphelins = volets(dispositionRef.current).filter((v) => v.pageId != null && !pages.some((p) => p.id === v.pageId));
+    if (orphelins.length === 0) return;
+    let arbre = dispositionRef.current;
+    for (const o of orphelins) {
+      const sans = volets(arbre).length > 1 ? retirerVolet(arbre, o.id) : null;
+      arbre = sans ?? remplacerVolet(arbre, o.id, (v) => ({ ...v, pageId: pages[0].id }));
+    }
+    majDisposition(arbre);
+    if (!trouverVolet(arbre, voletActifRef.current)) activerVolet(volets(arbre)[0].id);
+  }, [pages, majDisposition, activerVolet]);
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const pagesParId = useMemo(() => Object.fromEntries(pages.map((p) => [p.id, { icone: p.icone, type: p.type }])), [pages]);
+  const pagesParId = useMemo(() => Object.fromEntries(pages.map((p) => [p.id, { icone: p.icone, type: p.type, titre: p.titre }])), [pages]);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--police', (POLICES.find((p) => p.id === police) || POLICES[0]).css);
@@ -133,16 +209,52 @@ export default function App() {
   const arbre = useMemo(() => construireArbre(pages), [pages]);
   const pageCourante = pages.find((p) => p.id === courante) || null;
 
-  // Chemin de la page courante, de la racine jusqu'à elle (fil d'Ariane)
-  const chemin = useMemo(() => {
+  // Chemin d'une page, de la racine jusqu'à elle (fil d'Ariane)
+  function cheminDe(page) {
     const res = [];
-    let p = pageCourante;
+    let p = page;
     while (p) {
       res.unshift(p);
       p = pages.find((x) => x.id === p.parent_id);
     }
     return res;
-  }, [pages, pageCourante]);
+  }
+
+  // Le contenu d'un volet : la page, ou l'invitation à en créer une quand il n'y en a aucune
+  function rendrePage(volet, actif) {
+    const meta = pages.find((p) => p.id === volet.pageId);
+    if (!meta) {
+      return (
+        <div className="vide">
+          <p>Aucune page.</p>
+          <button onClick={() => creer(null)}>Créer une page</button>
+        </div>
+      );
+    }
+    return (
+      <PageView
+        key={meta.id}
+        id={meta.id}
+        actif={actif}
+        chemin={cheminDe(meta)}
+        onSelect={choisir}
+        onChange={recharger}
+        meta={meta}
+        lignes={pages.filter((p) => p.parent_id === meta.id)}
+        baseParente={pages.find((p) => p.id === meta.parent_id && p.type === 'base') ?? null}
+        onExporter={() => setExportId(meta.id)}
+        largeurEnregistree={largeurEnregistree}
+        onApercuLargeur={(p) => setApercuLargeur(p === null ? undefined : p)}
+        onAppliquerLargeur={async (p) => { setApercuLargeur(undefined); await enregistrerReglages({ largeurPage: p, pleineLargeur: null }); }}
+        onEmojisChange={chargerEmojis}
+        onRetour={() => naviguer('retour')}
+        onAvance={() => naviguer('avance')}
+        peutRetour={peutRetour}
+        peutAvance={peutAvance}
+        onApercuLigne={setApercuId}
+      />
+    );
+  }
 
   // ---------- Réglages
 
@@ -451,33 +563,15 @@ export default function App() {
         }}
       />
       <main className="contenu">
-        {pageCourante ? (
-          <PageView
-            key={pageCourante.id}
-            id={pageCourante.id}
-            chemin={chemin}
-            onSelect={choisir}
-            onChange={recharger}
-            meta={pageCourante}
-            lignes={pages.filter((p) => p.parent_id === pageCourante.id)}
-            baseParente={pages.find((p) => p.id === pageCourante.parent_id && p.type === 'base') ?? null}
-            onExporter={() => setExportId(pageCourante.id)}
-            largeurEnregistree={largeurEnregistree}
-            onApercuLargeur={(p) => setApercuLargeur(p === null ? undefined : p)}
-            onAppliquerLargeur={async (p) => { setApercuLargeur(undefined); await enregistrerReglages({ largeurPage: p, pleineLargeur: null }); }}
-            onEmojisChange={chargerEmojis}
-            onRetour={() => naviguer('retour')}
-            onAvance={() => naviguer('avance')}
-            peutRetour={peutRetour}
-            peutAvance={peutAvance}
-            onApercuLigne={setApercuId}
-          />
-        ) : (
-          <div className="vide">
-            <p>Aucune page.</p>
-            <button onClick={() => creer(null)}>Créer une page</button>
-          </div>
-        )}
+        <Volets
+          disposition={disposition}
+          actifId={actifId}
+          rendre={rendrePage}
+          onActiver={activerVolet}
+          onFermer={fermerVolet}
+          onDepot={deposerPage}
+          onTailles={(id, tailles) => majDisposition(majTailles(dispositionRef.current, id, tailles))}
+        />
       </main>
       {apercuId != null && pages.some((p) => p.id === apercuId) && (
         <ApercuPage

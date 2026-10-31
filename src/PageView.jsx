@@ -12,7 +12,7 @@ import LargeurPage from './LargeurPage.jsx';
 
 const DELAI_SAUVEGARDE = 500;
 
-export default function PageView({ id, chemin, onSelect, onChange, onExporter, meta, lignes, baseParente, largeurEnregistree, onApercuLargeur, onAppliquerLargeur, onEmojisChange, onRetour, onAvance, peutRetour, peutAvance, onApercuLigne, apercu = false }) {
+export default function PageView({ id, chemin, onSelect, onChange, onExporter, meta, lignes, baseParente, largeurEnregistree, onApercuLargeur, onAppliquerLargeur, onEmojisChange, onRetour, onAvance, peutRetour, peutAvance, onApercuLigne, apercu = false, actif = true }) {
   const [page, setPage] = useState(null);
   const [couvertureOuverte, setCouvertureOuverte] = useState(false);
   const [modeleOuvert, setModeleOuvert] = useState(false);
@@ -115,7 +115,7 @@ export default function PageView({ id, chemin, onSelect, onChange, onExporter, m
             {baseParente && (
               <ProprietesLigne base={baseParente} proprietes={page.proprietes} onChange={(proprietes) => modifier({ proprietes })} />
             )}
-            <Editor contenu={page.contenu} onChange={(contenu) => modifier({ contenu })} onNavigate={onSelect} chercher={!apercu} />
+            <Editor contenu={page.contenu} onChange={(contenu) => modifier({ contenu })} onNavigate={onSelect} chercher={!apercu && actif} />
           </>
         )}
         {lignesModification(page).length > 0 && (

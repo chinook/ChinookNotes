@@ -14,8 +14,8 @@ export default function LargeurPage({ enregistree, onApercu, onAppliquer }) {
   function ouvrir() {
     // sans réglage enregistré, on part de la largeur réellement affichée
     if (enregistree == null) {
-      const corps = document.querySelector('.page-corps');
-      const page = document.querySelector('.page');
+      const page = zone.current?.closest('.page'); // la page de ce volet, pas la première de l'écran
+      const corps = page?.querySelector('.page-corps');
       if (corps && page) setValeur(Math.max(LARGEUR_MIN, Math.min(LARGEUR_MAX, Math.round((corps.offsetWidth / page.offsetWidth) * 100))));
     } else {
       setValeur(enregistree);

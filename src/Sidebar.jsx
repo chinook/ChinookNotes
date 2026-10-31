@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import Icone from './emoji/Icone.jsx';
+import { TYPE_PAGE } from './volets.js';
 
 const DELAI_DEPLIAGE = 600;
 
@@ -31,7 +32,7 @@ function Noeud({ page, niveau, courante, ouverts, renommageId, onSelect, onBascu
         draggable={!enRenommage}
         onClick={() => onSelect(page.id)}
         onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onMenuPage(page); }}
-        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(page.id)); dnd.debut(page.id); }}
+        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(page.id)); e.dataTransfer.setData(TYPE_PAGE, String(page.id)); dnd.debut(page.id); }}
         onDragOver={(e) => dnd.survol(e, page, zoneDe(e), ouvert, aEnfants)}
         onDragLeave={() => dnd.quitte(page.id)}
         onDrop={(e) => dnd.depot(e, page.id, zoneDe(e))}
