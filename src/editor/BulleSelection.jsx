@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useEditorState } from '@tiptap/react';
 import { NodeSelection } from '@tiptap/pm/state';
+import { MOD } from '../plateforme.js';
 
 function Bouton({ titre, actif, onClick, children }) {
   return (
@@ -74,9 +75,9 @@ export default function BulleSelection({ editor }) {
   const c = () => editor.chain().focus();
   return (
     <div className="bulle-selection" style={style} onMouseDown={(e) => e.preventDefault()}>
-      <Bouton titre="Gras (Ctrl+B)" actif={etat.gras} onClick={() => c().toggleBold().run()}><b>B</b></Bouton>
-      <Bouton titre="Italique (Ctrl+I)" actif={etat.italique} onClick={() => c().toggleItalic().run()}><i>I</i></Bouton>
-      <Bouton titre="Souligné (Ctrl+U)" actif={etat.souligne} onClick={() => c().toggleUnderline().run()}><u>U</u></Bouton>
+      <Bouton titre={`Gras (${MOD}+B)`} actif={etat.gras} onClick={() => c().toggleBold().run()}><b>B</b></Bouton>
+      <Bouton titre={`Italique (${MOD}+I)`} actif={etat.italique} onClick={() => c().toggleItalic().run()}><i>I</i></Bouton>
+      <Bouton titre={`Souligné (${MOD}+U)`} actif={etat.souligne} onClick={() => c().toggleUnderline().run()}><u>U</u></Bouton>
       <Bouton titre="Barré" actif={etat.barre} onClick={() => c().toggleStrike().run()}><s>S</s></Bouton>
       <Bouton titre="Code en ligne" actif={etat.code} onClick={() => c().toggleCode().run()}>{'</>'}</Bouton>
       <span className="sep" />

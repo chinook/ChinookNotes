@@ -28,7 +28,10 @@ export default function BarreTitre({ theme }) {
   const [ouvert, setOuvert] = useState(null);
   const racine = useRef(null);
 
-  useEffect(() => { window.api.themeFenetre(theme); }, [theme]);
+  useEffect(() => {
+    document.documentElement.dataset.plateforme = window.api.plateforme;
+    window.api.themeFenetre(theme);
+  }, [theme]);
 
   useEffect(() => {
     if (ouvert === null) return undefined;
@@ -41,6 +44,9 @@ export default function BarreTitre({ theme }) {
     setOuvert(null);
     window.api.actionFenetre(action);
   }
+
+  // Mac : barre de titre et menu natifs
+  if (window.api.plateforme === 'darwin') return null;
 
   return (
     <div className="barre-titre" ref={racine}>

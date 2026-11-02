@@ -88,6 +88,8 @@ function Noeud({ page, niveau, courante, ouverts, renommageId, onSelect, onBascu
   );
 }
 
+import { MOD } from './plateforme.js';
+
 // En dessous, le pied (« + Nouvelle page » et les icônes) déborde de la barre latérale
 const LARGEUR_SIDEBAR_MIN = 240;
 
@@ -182,11 +184,11 @@ export default function Sidebar({ arbre, courante, ouverts, largeur, avatar, ren
       <div className="sidebar-poignee" onMouseDown={demarrerRedimensionnement} onDoubleClick={() => onLargeurFin(null)} title="Glisser pour changer la largeur (double-clic : largeur d'origine)" />
       <div className="sidebar-titre">
         <span>ChinookNotes</span>
-        <button className="sidebar-cacher" onClick={onCacher} title="Cacher la barre latérale (Ctrl + \)">«</button>
+        <button className="sidebar-cacher" onClick={onCacher} title={`Cacher la barre latérale (${MOD} + \\)`}>«</button>
       </div>
       <button className="sidebar-recherche" onClick={onRechercher}>
         <span>🔍 Rechercher</span>
-        <kbd>Ctrl K</kbd>
+        <kbd>{MOD} K</kbd>
       </button>
       <div
         className={'arbre' + (cible?.id === 'racine' ? ' cible-racine' : '')}

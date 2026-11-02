@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { MOD } from '../plateforme.js';
 
 function Bouton({ editor, titre, actif, onClick, children, desactive }) {
   return (
@@ -42,9 +43,9 @@ export default function Toolbar({ editor, onImages }) {
       </select>
 
       <span className="sep" />
-      <Bouton titre="Gras (Ctrl+B)" actif={editor.isActive('bold')} onClick={() => chaine().toggleBold().run()}><b>B</b></Bouton>
-      <Bouton titre="Italique (Ctrl+I)" actif={editor.isActive('italic')} onClick={() => chaine().toggleItalic().run()}><i>I</i></Bouton>
-      <Bouton titre="Souligné (Ctrl+U)" actif={editor.isActive('underline')} onClick={() => chaine().toggleUnderline().run()}><u>U</u></Bouton>
+      <Bouton titre={`Gras (${MOD}+B)`} actif={editor.isActive('bold')} onClick={() => chaine().toggleBold().run()}><b>B</b></Bouton>
+      <Bouton titre={`Italique (${MOD}+I)`} actif={editor.isActive('italic')} onClick={() => chaine().toggleItalic().run()}><i>I</i></Bouton>
+      <Bouton titre={`Souligné (${MOD}+U)`} actif={editor.isActive('underline')} onClick={() => chaine().toggleUnderline().run()}><u>U</u></Bouton>
       <Bouton titre="Barré" actif={editor.isActive('strike')} onClick={() => chaine().toggleStrike().run()}><s>S</s></Bouton>
       <Bouton titre="Code en ligne" actif={editor.isActive('code')} onClick={() => chaine().toggleCode().run()}>{'</>'}</Bouton>
 

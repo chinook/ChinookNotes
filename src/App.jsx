@@ -22,6 +22,7 @@ import Volets from './Volets.jsx';
 import Permissions from './Permissions.jsx';
 import { peutGererMembres } from './permissions.js';
 import BarreTitre from './BarreTitre.jsx';
+import { EST_MAC, MOD } from './plateforme.js';
 import { MAX_VOLETS, majTailles, nouveauVolet, remplacerVolet, retirerVolet, scinder, trouverVolet, volets } from './volets.js';
 
 const LARGEUR_SIDEBAR_DEFAUT = 220;
@@ -346,7 +347,7 @@ export default function App() {
 
   useEffect(() => {
     const molette = (e) => {
-      if (!e.ctrlKey) return;
+      if (!(e.ctrlKey || (EST_MAC && e.metaKey))) return;
       e.preventDefault();
       appliquerZoom(zoomRef.current + (e.deltaY < 0 ? 0.1 : -0.1));
     };
@@ -393,6 +394,9 @@ export default function App() {
     const clavier = (e) => {
       if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); unSeul('retour'); }
       if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); unSeul('avance'); }
+      // Mac : ⌘[ et ⌘] comme dans les navigateurs
+      if (EST_MAC && e.metaKey && !e.altKey && e.key === '[') { e.preventDefault(); unSeul('retour'); }
+      if (EST_MAC && e.metaKey && !e.altKey && e.key === ']') { e.preventDefault(); unSeul('avance'); }
     };
     window.addEventListener('mouseup', souris);
     window.addEventListener('keydown', clavier);
@@ -625,7 +629,7 @@ export default function App() {
     <div className="app">
       {sidebarCachee && (
         <div className="rail">
-          <button className="rail-afficher" onClick={() => setSidebarCachee(false)} title="Afficher la barre latérale (Ctrl + \)">»</button>
+          <button className="rail-afficher" onClick={() => setSidebarCachee(false)} title={`Afficher la barre latérale (${MOD} + \\)`}>»</button>
         </div>
       )}
       {!sidebarCachee && <Sidebar

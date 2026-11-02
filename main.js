@@ -15,8 +15,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1400, height: 900,
     show: false,
-    titleBarStyle: 'hidden',
-    titleBarOverlay: COULEURS_BARRE.clair,
+    // Mac : on garde la barre de titre et le menu natifs (feux tricolores, ⌘A / ⌘C / ⌘V / ⌘Q…)
+    ...(process.platform === 'darwin' ? {} : { titleBarStyle: 'hidden', titleBarOverlay: COULEURS_BARRE.clair }),
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       contextIsolation: true,
@@ -208,7 +208,17 @@ ipcMain.handle('export:afficher', (event, chemin) => shell.showItemInFolder(path
 
 app.whenReady().then(() => {
   db.ouvrirBase();
-  Menu.setApplicationMenu(null);
+  if (process.platform === 'darwin') {
+    // Sans menu, les raccourcis ⌘ du Mac (copier, coller, tout sélectionner, quitter…) ne fonctionnent pas
+    Menu.setApplicationMenu(Menu.buildFromTemplate([
+      { role: 'appMenu' },
+      { role: 'editMenu' },
+      { label: 'Affichage', submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }, { role: 'togglefullscreen' }] },
+      { role: 'windowMenu' },
+    ]));
+  } else {
+    Menu.setApplicationMenu(null);
+  }
   createWindow();
 
   app.on('activate', () => {

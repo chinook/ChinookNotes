@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('api', {
     lireZoom: () => webFrame.getZoomFactor(),
     // « retour » / « avance » : boutons latéraux de la souris (commande système de Windows)
     surNavigation: (rappel) => ipcRenderer.on('nav', (event, sens) => rappel(sens)),
+    plateforme: process.platform,
     themeFenetre: (theme) => ipcRenderer.invoke('fenetre:theme', theme),
     actionFenetre: (action) => ipcRenderer.invoke('fenetre:action', action),
     menuContextuel: (modele) => ipcRenderer.invoke('menu:popup', modele),

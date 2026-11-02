@@ -1,5 +1,6 @@
 // Réglages : apparence et outils (ce qui se trouvait en bas de la barre latérale)
 import { POLICES } from './polices.js';
+import { MOD } from './plateforme.js';
 import { ROLES, peutGererMembres } from './permissions.js';
 
 export default function Reglages({ theme, police, onPolice, zoom, onTheme, onZoomInitial, onLargeurSidebarInitiale, onImporter, onCorbeille, onModeles, role, onRole, onPermissions, onFermer }) {
@@ -22,7 +23,7 @@ export default function Reglages({ theme, police, onPolice, zoom, onTheme, onZoo
           </select>
         </div>
         <div className="reglage-ligne">
-          <span>Zoom de l'application : {Math.round(zoom * 100)} % <span className="aide">(Ctrl + molette)</span></span>
+          <span>Zoom de l'application : {Math.round(zoom * 100)} % <span className="aide">({MOD} + molette)</span></span>
           <button onClick={onZoomInitial} disabled={Math.abs(zoom - 1) < 0.01}>Réinitialiser</button>
         </div>
         <div className="reglage-ligne">
