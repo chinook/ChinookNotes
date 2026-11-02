@@ -88,6 +88,9 @@ function Noeud({ page, niveau, courante, ouverts, renommageId, onSelect, onBascu
   );
 }
 
+// En dessous, le pied (« + Nouvelle page » et les icônes) déborde de la barre latérale
+const LARGEUR_SIDEBAR_MIN = 240;
+
 export default function Sidebar({ arbre, courante, ouverts, largeur, avatar, renommageId, onSelect, onBasculer, onCreer, onSupprimer, onRechercher, onDeplacer, onDeplacerRacine, onMenuPage, onMenuVide, onRenommer, onProfil, onReglages, onLargeur, onLargeurFin, onCacher }) {
   const [glisse, setGlisse] = useState(null);
   const [cible, setCible] = useState(null);
@@ -97,7 +100,7 @@ export default function Sidebar({ arbre, courante, ouverts, largeur, avatar, ren
   function demarrerRedimensionnement(e) {
     e.preventDefault();
     let derniere = largeur;
-    const bouge = (ev) => { derniere = Math.max(180, Math.min(520, ev.clientX)); onLargeur(derniere); };
+    const bouge = (ev) => { derniere = Math.max(LARGEUR_SIDEBAR_MIN, Math.min(520, ev.clientX)); onLargeur(derniere); };
     const fin = () => {
       window.removeEventListener('mousemove', bouge);
       window.removeEventListener('mouseup', fin);

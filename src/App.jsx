@@ -23,7 +23,7 @@ import Permissions from './Permissions.jsx';
 import { peutGererMembres } from './permissions.js';
 import { MAX_VOLETS, majTailles, nouveauVolet, remplacerVolet, retirerVolet, scinder, trouverVolet, volets } from './volets.js';
 
-const LARGEUR_SIDEBAR_DEFAUT = 260;
+const LARGEUR_SIDEBAR_DEFAUT = 220;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 2.5;
 
@@ -215,7 +215,7 @@ export default function App() {
     });
     window.api.lireReglages().then((r) => {
       setReglages(r);
-      if (r.largeurSidebar) setLargeurSidebar(Number(r.largeurSidebar));
+      if (r.largeurSidebar) setLargeurSidebar(Math.max(220, Number(r.largeurSidebar)));
       if (r.zoom) { const z = Number(r.zoom); setZoom(z); window.api.definirZoom(z); }
     });
     chargerEmojis();
