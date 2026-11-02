@@ -52,7 +52,42 @@ button {
   border-radius: 4px;
 }
 
-.app { display: flex; height: 100%; }
+/* Barre de titre (hauteur identique à celle des boutons Windows, cf. HAUTEUR_BARRE dans main.js) */
+.barre-titre {
+  position: relative;
+  z-index: 1000;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 calc(100vw - env(titlebar-area-width, 100vw)) 0 12px;
+  background: var(--fond-sidebar);
+  border-bottom: 1px solid var(--bordure);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.barre-titre-logo { width: 20px; height: 20px; object-fit: contain; }
+.barre-menus { display: flex; -webkit-app-region: no-drag; }
+.barre-menu { position: relative; }
+.barre-menu > button { padding: 4px 10px; font-size: 13px; }
+.barre-menu > button:hover, .barre-menu > button.actif { background: var(--survol); }
+.barre-menu-liste {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+.barre-menu-liste button { padding: 6px 10px; font-size: 13px; text-align: left; }
+.barre-menu-liste button:hover { background: var(--survol); }
+
+.app { display: flex; height: calc(100% - 36px); }
 
 /* Barre latérale */
 .sidebar {

@@ -4,10 +4,19 @@ const fs = require('fs');
 const os = require('os');
 const db = require('./db');
 
+// Barre de titre : les boutons réduire / agrandir / fermer restent ceux de Windows, aux couleurs du thème
+const HAUTEUR_BARRE = 36;
+const COULEURS_BARRE = {
+  clair: { color: '#f7f6f3', symbolColor: '#37352f', height: HAUTEUR_BARRE },
+  sombre: { color: '#202020', symbolColor: '#e6e6e4', height: HAUTEUR_BARRE },
+};
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1400, height: 900,
     show: false,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: COULEURS_BARRE.clair,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       contextIsolation: true,
@@ -32,6 +41,25 @@ function createWindow() {
     win.loadFile(path.join(__dirname, 'dist', 'index.html'));
   }
 }
+
+// Le menu natif (Fichier, Affichage…) est remplacé par la barre de titre de l'interface
+ipcMain.handle('fenetre:theme', (event, theme) => {
+  const fenetre = BrowserWindow.fromWebContents(event.sender);
+  if (fenetre && process.platform !== 'darwin') fenetre.setTitleBarOverlay(COULEURS_BARRE[theme] || COULEURS_BARRE.clair);
+});
+ipcMain.handle('fenetre:action', (event, action) => {
+  const fenetre = BrowserWindow.fromWebContents(event.sender);
+  if (!fenetre) return;
+  const contenu = fenetre.webContents;
+  if (action === 'quitter') app.quit();
+  else if (action === 'recharger') contenu.reload();
+  else if (action === 'plein-ecran') fenetre.setFullScreen(!fenetre.isFullScreen());
+  else if (action === 'outils') contenu.toggleDevTools();
+  else if (action === 'couper') contenu.cut();
+  else if (action === 'copier') contenu.copy();
+  else if (action === 'coller') contenu.paste();
+  else if (action === 'tout-selectionner') contenu.selectAll();
+});
 
 ipcMain.handle('pages:liste', () => db.listePages());
 ipcMain.handle('modeles:liste', () => db.listeModeles());
@@ -180,6 +208,7 @@ ipcMain.handle('export:afficher', (event, chemin) => shell.showItemInFolder(path
 
 app.whenReady().then(() => {
   db.ouvrirBase();
+  Menu.setApplicationMenu(null);
   createWindow();
 
   app.on('activate', () => {

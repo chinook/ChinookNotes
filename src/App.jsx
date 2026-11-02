@@ -21,6 +21,7 @@ import { actionCorbeille, actionCreation, actionModification, annuler, annulerSi
 import Volets from './Volets.jsx';
 import Permissions from './Permissions.jsx';
 import { peutGererMembres } from './permissions.js';
+import BarreTitre from './BarreTitre.jsx';
 import { MAX_VOLETS, majTailles, nouveauVolet, remplacerVolet, retirerVolet, scinder, trouverVolet, volets } from './volets.js';
 
 const LARGEUR_SIDEBAR_DEFAUT = 220;
@@ -620,6 +621,7 @@ export default function App() {
   return (
     <EmojisContext.Provider value={emojis}>
     <PagesContext.Provider value={pagesParId}>
+    <BarreTitre theme={theme} />
     <div className="app">
       {sidebarCachee && (
         <div className="rail">
