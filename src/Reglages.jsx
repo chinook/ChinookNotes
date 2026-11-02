@@ -1,7 +1,8 @@
 // Réglages : apparence et outils (ce qui se trouvait en bas de la barre latérale)
 import { POLICES } from './polices.js';
+import { ROLES, peutGererMembres } from './permissions.js';
 
-export default function Reglages({ theme, police, onPolice, zoom, onTheme, onZoomInitial, onLargeurSidebarInitiale, onImporter, onCorbeille, onModeles, onFermer }) {
+export default function Reglages({ theme, police, onPolice, zoom, onTheme, onZoomInitial, onLargeurSidebarInitiale, onImporter, onCorbeille, onModeles, role, onRole, onPermissions, onFermer }) {
   const ouvrir = (action) => () => { onFermer(); action(); };
 
   return (
@@ -39,8 +40,26 @@ export default function Reglages({ theme, police, onPolice, zoom, onTheme, onZoo
           <button onClick={ouvrir(onImporter)}>Importer…</button>
         </div>
         <div className="reglage-ligne">
-          <span>🗑 Corbeille</span>
+          <span>🗑️ Corbeille</span>
           <button onClick={ouvrir(onCorbeille)}>Ouvrir…</button>
+        </div>
+
+        {peutGererMembres(role) && (
+          <>
+            <div className="titre-section">Administration</div>
+            <div className="reglage-ligne">
+              <span>👥 Permissions des membres</span>
+              <button onClick={ouvrir(onPermissions)}>Ouvrir…</button>
+            </div>
+          </>
+        )}
+
+        <div className="titre-section">Test (sans serveur)</div>
+        <div className="reglage-ligne">
+          <span>Mon rôle <span className="aide">(simulation : l'administration n'apparaît que pour un administrateur ou le propriétaire)</span></span>
+          <select value={role} onChange={(e) => onRole(e.target.value)}>
+            {ROLES.map((r) => <option key={r.id} value={r.id}>{r.nom}</option>)}
+          </select>
         </div>
 
         <div className="dialogue-boutons">

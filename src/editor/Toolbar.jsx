@@ -82,7 +82,7 @@ export default function Toolbar({ editor, onImages }) {
           <Bouton titre="Supprimer la ligne" onClick={() => chaine().deleteRow().run()}>− ligne</Bouton>
           <Bouton titre="Supprimer la colonne" onClick={() => chaine().deleteColumn().run()}>− colonne</Bouton>
           <Bouton titre="Ligne d'en-tête" onClick={() => chaine().toggleHeaderRow().run()}>En-tête</Bouton>
-          <Bouton titre="Supprimer le tableau" onClick={() => chaine().deleteTable().run()}>🗑 Tableau</Bouton>
+          <Bouton titre="Supprimer le tableau" onClick={() => chaine().deleteTable().run()}>🗑️ Tableau</Bouton>
         </>
       )}
     </div>

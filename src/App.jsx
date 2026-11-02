@@ -19,6 +19,8 @@ import { POLICES } from './polices.js';
 import { PagesContext } from './pagesContext.js';
 import { actionCorbeille, actionCreation, actionModification, annuler, annulerSiDerniere, enregistrer, refaire, retirer } from './historiqueActions.js';
 import Volets from './Volets.jsx';
+import Permissions from './Permissions.jsx';
+import { peutGererMembres } from './permissions.js';
 import { MAX_VOLETS, majTailles, nouveauVolet, remplacerVolet, retirerVolet, scinder, trouverVolet, volets } from './volets.js';
 
 const LARGEUR_SIDEBAR_DEFAUT = 260;
@@ -52,6 +54,7 @@ export default function App() {
   const [reglagesOuverts, setReglagesOuverts] = useState(false);
   const [profilOuvert, setProfilOuvert] = useState(false);
   const [corbeilleOuverte, setCorbeilleOuverte] = useState(false);
+  const [permissionsOuvertes, setPermissionsOuvertes] = useState(false);
   const [emojis, setEmojis] = useState({});
   const [toast, setToast] = useState(null);                // { id, message, action: { label, fn } }
   const [renommageId, setRenommageId] = useState(null);
@@ -608,6 +611,9 @@ export default function App() {
 
   // Premier lancement : on demande son nom à l'utilisateur (pour « Dernière modification par … »)
   const demanderNom = reglages && !reglages.auteur && !reglages.auteurDemande;
+  // Rôle de l'utilisateur : simulé tant qu'il n'y a pas de serveur. Sans réglage, on est propriétaire de ses propres notes.
+  const role = reglages?.roleSimule || 'proprietaire';
+  const aucunServeur = () => setToast({ id: Date.now(), message: "Aucun serveur n'est connecté : rien n'a été modifié" });
   const pagePourIcone = pages.find((p) => p.id === iconePageId);
   const pagePourDeplacer = pages.find((p) => p.id === deplacerId);
 
@@ -707,7 +713,22 @@ export default function App() {
           onImporter={importer}
           onCorbeille={() => setCorbeilleOuverte(true)}
           onModeles={() => setSelecteurOuvert(true)}
+          role={role}
+          onRole={(r) => enregistrerReglages({ roleSimule: r })}
+          onPermissions={() => setPermissionsOuvertes(true)}
           onFermer={() => setReglagesOuverts(false)}
+        />
+      )}
+      {permissionsOuvertes && peutGererMembres(role) && (
+        <Permissions
+          moi={role}
+          membres={[]}
+          serveurConnecte={false}
+          roleParDefaut={reglages?.roleParDefaut || 'lecteur'}
+          onRoleParDefaut={(r) => enregistrerReglages({ roleParDefaut: r })}
+          onChangerRole={aucunServeur}
+          onRetirer={aucunServeur}
+          onFermer={() => setPermissionsOuvertes(false)}
         />
       )}
       {profilOuvert && reglages && (

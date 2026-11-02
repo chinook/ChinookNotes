@@ -31,7 +31,7 @@ export default function Corbeille({ onChange, onFermer }) {
   return (
     <div className="dialogue-fond" onMouseDown={onFermer}>
       <div className="dialogue dialogue-modeles" onMouseDown={(e) => e.stopPropagation()}>
-        <strong>🗑 Corbeille</strong>
+        <strong>🗑️ Corbeille</strong>
         {elements === null ? null : elements.length === 0 ? (
           <p className="aide">La corbeille est vide.</p>
         ) : (
@@ -47,7 +47,7 @@ export default function Corbeille({ onChange, onFermer }) {
                   </div>
                 </div>
                 <button onClick={() => restaurer(e)}>↩ Restaurer</button>
-                <button onClick={() => supprimer(e)} title="Supprimer définitivement">🗑</button>
+                <button onClick={() => supprimer(e)} title="Supprimer définitivement">🗑️</button>
               </div>
             ))}
           </div>
