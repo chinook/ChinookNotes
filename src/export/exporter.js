@@ -26,12 +26,18 @@ function sousArbre(pages, id, avecSousPages) {
     page: p,
     enfants: avecSousPages ? pages.filter((x) => x.parent_id === p.id).map(noeud) : [],
   });
+  // id null : tout l'espace de travail, sous une racine virtuelle (sans page ni fichier) qui porte les pages de premier niveau
+  if (id === null) return { page: null, enfants: pages.filter((p) => p.parent_id == null).map(noeud) };
   return noeud(pages.find((p) => p.id === id));
 }
 
 // Une page qui a des sous-pages devient un dossier : « 02_Titre/00_Titre.md » + ses enfants.
 // La page exportée elle-même est à la racine de l'export.
 function placer(noeud, dossier, prefixe, ext, plat, estRacine) {
+  if (noeud.page === null) {                           // racine virtuelle : seulement ses enfants
+    noeud.enfants.forEach((e, i) => placer(e, '', `${pad(i + 1)}_`, ext, plat, false));
+    return;
+  }
   const nom = nomSur(noeud.page.titre);
   plat.push(noeud);
   if (estRacine) {
@@ -47,10 +53,13 @@ function placer(noeud, dossier, prefixe, ext, plat, estRacine) {
 }
 
 // format : 'md' | 'html' | 'pdf' ; pages : liste à plat de l'application
+// id : la page à exporter, ou null pour toutes les pages (avec leurs sous-pages si « sousPages »)
 // Retourne null si l'utilisateur annule, sinon { fichiers, emplacement }
 export async function exporter({ id, format, sousPages, pages }) {
-  const racine = pages.find((p) => p.id === id);
+  const tout = id === null;
+  const racine = tout ? { titre: `ChinookNotes_${new Date().toISOString().slice(0, 10)}` } : pages.find((p) => p.id === id);
   const arbre = sousArbre(pages, id, sousPages);
+  if (tout && arbre.enfants.length === 0) throw new Error('Aucune page à exporter');
   const plusieurs = arbre.enfants.length > 0;
   const nom = nomSur(racine.titre);
 
@@ -100,7 +109,7 @@ export async function exporter({ id, format, sousPages, pages }) {
   // 3. Markdown / HTML : un fichier par page
   let dossierRacine = dest.dossier;
   if (plusieurs) dossierRacine = `${dest.dossier}/${nom}`;
-  else parId.get(id).chemin = dest.nom;               // le nom choisi dans la boîte de dialogue
+  else parId.get(id).chemin = dest.nom;             // le nom choisi dans la boîte de dialogue
 
   const dossierImages = plusieurs ? 'images' : `${dest.nom.replace(/\.[^.]+$/, '')}_images`;
   const images = new Map();                            // data URL → chemin dans l'export

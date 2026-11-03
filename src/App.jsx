@@ -56,8 +56,7 @@ export default function App() {
   const [reglagesOuverts, setReglagesOuverts] = useState(false);
   const [profilOuvert, setProfilOuvert] = useState(false);
   const [corbeilleOuverte, setCorbeilleOuverte] = useState(false);
-  const [permissionsOuvertes, setPermissionsOuvertes] = useState(false);
-  const [emojis, setEmojis] = useState({});
+  const [permissionsOuvertes, setPermissionsOuvertes] = useState(false);  const [emojis, setEmojis] = useState({});
   const [toast, setToast] = useState(null);                // { id, message, action: { label, fn } }
   const [renommageId, setRenommageId] = useState(null);
   const [iconePageId, setIconePageId] = useState(null);    // page dont on change l'icône (clic droit)
@@ -147,6 +146,21 @@ export default function App() {
     majDisposition(arbre);
     if (!trouverVolet(arbre, voletActifRef.current)) activerVolet(volets(arbre)[0].id);
   }, [pages, majDisposition, activerVolet]);
+
+  // Échap ferme la fenêtre ouverte par-dessus l'application (la plus récente s'il y en a plusieurs).
+  // Les fenêtres se ferment au clic sur leur fond : on déclenche ce clic. Bienvenue n'a pas de fermeture, elle reste.
+  useEffect(() => {
+    const echap = (e) => {
+      if (e.key !== 'Escape' || e.isComposing) return;
+      const fonds = document.querySelectorAll('.dialogue-fond');
+      if (fonds.length === 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      fonds[fonds.length - 1].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    };
+    window.addEventListener('keydown', echap, true);
+    return () => window.removeEventListener('keydown', echap, true);
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -717,7 +731,7 @@ export default function App() {
           onZoomInitial={() => appliquerZoom(1)}
           onLargeurSidebarInitiale={() => { setLargeurSidebar(LARGEUR_SIDEBAR_DEFAUT); enregistrerReglages({ largeurSidebar: null }); }}
           onImporter={importer}
-          onCorbeille={() => setCorbeilleOuverte(true)}
+          onExporterTout={() => setExportId('tout')}          onCorbeille={() => setCorbeilleOuverte(true)}
           onModeles={() => setSelecteurOuvert(true)}
           role={role}
           onRole={(r) => enregistrerReglages({ roleSimule: r })}

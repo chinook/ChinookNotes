@@ -36,8 +36,10 @@ export default function BarreTitre({ theme }) {
   useEffect(() => {
     if (ouvert === null) return undefined;
     const ferme = (e) => { if (!racine.current?.contains(e.target)) setOuvert(null); };
+    const echap = (e) => { if (e.key === 'Escape') setOuvert(null); };
     window.addEventListener('mousedown', ferme);
-    return () => window.removeEventListener('mousedown', ferme);
+    window.addEventListener('keydown', echap);
+    return () => { window.removeEventListener('mousedown', ferme); window.removeEventListener('keydown', echap); };
   }, [ouvert]);
 
   function lancer(action) {

@@ -490,6 +490,25 @@ body.redimensionnement-v * { cursor: row-resize !important; }
   color: var(--texte-doux);
 }
 .sidebar-recherche:hover { background: var(--survol); }
+/* Réglages : menu des sections (30 %) + options de la section choisie (70 %) */
+.dialogue.reglages { display: flex; flex-direction: row; gap: 0; padding: 0; width: min(960px, 94vw); height: min(640px, 86vh); max-height: none; overflow: hidden; }
+.reglages-menu { flex: 0 0 30%; display: flex; flex-direction: column; gap: 2px; padding: 16px 10px; background: var(--fond-sidebar); border-right: 1px solid var(--bordure); overflow: auto; }
+.reglages-titre { padding: 4px 10px 12px; }
+.reglages-menu button { display: flex; align-items: center; gap: 10px; padding: 8px 10px; text-align: left; color: var(--texte-doux); }
+.reglages-menu button:hover { background: var(--survol); color: var(--texte); }
+.reglages-menu button.actif { background: var(--actif); color: var(--texte); font-weight: 600; }
+.reglages-contenu { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.reglages-entete { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 8px; font-size: 17px; }
+.reglages-fermer { padding: 2px 8px; color: var(--texte-doux); }
+.reglages-fermer:hover { background: var(--survol); color: var(--texte); }
+.reglages-corps { flex: 1; overflow: auto; padding: 4px 20px 20px; display: flex; flex-direction: column; gap: 6px; }
+
+/* Raccourcis clavier (onglet des Réglages) */
+.raccourcis { display: grid; gap: 8px; }
+.raccourcis table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.raccourcis th { text-align: left; font-weight: 600; color: var(--texte-doux); padding: 4px 6px; }
+.raccourcis td { padding: 5px 6px; border-top: 1px solid var(--bordure); vertical-align: top; }
+.raccourcis td:first-child { width: 40%; }
 kbd {
   font: inherit;
   font-size: 11px;

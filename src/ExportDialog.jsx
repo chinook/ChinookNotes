@@ -12,9 +12,11 @@ function compterDescendants(pages, id) {
   return enfants.reduce((n, e) => n + compterDescendants(pages, e.id), enfants.length);
 }
 
+// pageId === 'tout' : exporte toutes les pages de la base de données
 export default function ExportDialog({ pages, pageId, onFermer }) {
-  const page = pages.find((p) => p.id === pageId);
-  const nbSous = compterDescendants(pages, pageId);
+  const tout = pageId === 'tout';
+  const page = tout ? null : pages.find((p) => p.id === pageId);
+  const nbSous = tout ? pages.filter((p) => p.parent_id != null).length : compterDescendants(pages, pageId);
   const [format, setFormat] = useState('md');
   const [sousPages, setSousPages] = useState(nbSous > 0);
   const [etat, setEtat] = useState({ phase: 'choix' });
@@ -22,7 +24,7 @@ export default function ExportDialog({ pages, pageId, onFermer }) {
   async function lancer() {
     setEtat({ phase: 'encours' });
     try {
-      const resultat = await exporter({ id: pageId, format, sousPages, pages });
+      const resultat = await exporter({ id: tout ? null : pageId, format, sousPages, pages });
       if (resultat === null) setEtat({ phase: 'choix' }); // destination annulée
       else setEtat({ phase: 'termine', ...resultat });
     } catch (e) {
@@ -33,7 +35,7 @@ export default function ExportDialog({ pages, pageId, onFermer }) {
   return (
     <div className="dialogue-fond" onMouseDown={etat.phase === 'encours' ? undefined : onFermer}>
       <div className="dialogue dialogue-large" onMouseDown={(e) => e.stopPropagation()}>
-        <strong>Exporter « {page?.titre || 'Sans titre'} »</strong>
+        <strong>{tout ? `Exporter toutes les pages (${pages.length})` : `Exporter « ${page?.titre || 'Sans titre'} »`}</strong>
 
         {(etat.phase === 'choix' || etat.phase === 'encours') && (
           <>
@@ -54,7 +56,7 @@ export default function ExportDialog({ pages, pageId, onFermer }) {
                 onChange={(e) => setSousPages(e.target.checked)}
               />
               {nbSous === 0
-                ? 'Inclure les sous-pages (cette page n\'en a pas)'
+                ? `Inclure les sous-pages (${tout ? 'il n\'y en a aucune' : 'cette page n\'en a pas'})`
                 : `Inclure les ${nbSous} sous-page(s)`}
             </label>
             {sousPages && nbSous > 0 && (
