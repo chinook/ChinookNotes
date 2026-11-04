@@ -10,6 +10,7 @@ const SECTIONS = [
       ['Refaire', 'Ctrl + Y ou Ctrl + Maj + Z', '⌘ Maj + Z'],
       ['Page précédente / suivante', 'Alt + ← / →  (ou boutons latéraux de la souris)', '⌥ ← / →  ou  ⌘ [ / ⌘ ]'],
       ['Zoom de l\'application', 'Ctrl + molette', '⌘ + molette'],
+      ['Zoom : agrandir / réduire', 'Ctrl + + / Ctrl + -', '⌘ + / ⌘ -'],
       ['Zoom : revenir à 100 %', 'Ctrl + 0', '⌘ 0'],
       ['Fermer la fenêtre ouverte (boîte de dialogue, aperçu, recherche)', 'Échap', 'Échap'],
     ],

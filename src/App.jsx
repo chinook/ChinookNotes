@@ -368,6 +368,9 @@ export default function App() {
     const clavier = (e) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
       if (e.key === '0') { e.preventDefault(); appliquerZoom(1); }
+      // Ctrl + « + » (ou « = », sans Maj sur un clavier QWERTY) agrandit, Ctrl + « - » réduit
+      else if (e.key === '+' || e.key === '=') { e.preventDefault(); appliquerZoom(zoomRef.current + 0.1); }
+      else if (e.key === '-' || e.key === '_') { e.preventDefault(); appliquerZoom(zoomRef.current - 0.1); }
     };
     window.addEventListener('wheel', molette, { passive: false });
     window.addEventListener('keydown', clavier);
